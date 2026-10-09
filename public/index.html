@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MY-SCHOOL</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>MY-SCHOOL</h1>
+    <nav>
+      <button data-view="practice" class="active">Practicar</button>
+      <button data-view="progress">Mi progreso</button>
+      <button data-view="tutor">Tutor IA</button>
+      <button data-view="profile">Perfil</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-practice" class="view active">
+      <div class="track-switch">
+        <button data-track="english" class="active">🇬🇧 Inglés</button>
+        <button data-track="programming">💻 Programación</button>
+      </div>
+      <form id="new-exercise" class="row">
+        <input id="focus" placeholder="Opcional: tema que quieres practicar (p. ej. 'present perfect', 'arrays')">
+        <button type="submit">Nuevo ejercicio</button>
+      </form>
+      <div id="exercise" class="card hidden"></div>
+      <div id="result" class="card hidden"></div>
+    </section>
+
+    <section id="view-progress" class="view">
+      <div class="track-switch">
+        <button data-track="english" class="active">🇬🇧 Inglés</button>
+        <button data-track="programming">💻 Programación</button>
+      </div>
+      <div id="stats" class="stats"></div>
+      <h2>Habilidades</h2>
+      <div id="skills"></div>
+      <div class="row">
+        <button id="analyze">Analizar mis errores con IA</button>
+      </div>
+      <div id="insights" class="card hidden"></div>
+    </section>
+
+    <section id="view-tutor" class="view">
+      <p class="muted">Pregúntale lo que quieras. El tutor ve tu progreso y tus errores recientes.</p>
+      <div id="chat-log"></div>
+      <form id="chat-form" class="row">
+        <textarea id="chat-input" rows="2" placeholder="Ej: ¿Por qué sigo fallando el past simple?"></textarea>
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <section id="view-profile" class="view">
+      <form id="profile-form" class="card form">
+        <label>Nombre <input name="name"></label>
+        <label>Nivel de inglés
+          <select name="englishLevel">
+            <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+          </select>
+        </label>
+        <label>Lenguaje de programación
+          <select name="programmingLanguage">
+            <option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>C++</option><option>TypeScript</option><option>Go</option><option>SQL</option>
+          </select>
+        </label>
+        <label>Nivel de programación
+          <select name="programmingLevel">
+            <option>principiante</option><option>intermedio</option><option>avanzado</option>
+          </select>
+        </label>
+        <label>Objetivos <textarea name="goals" rows="3" placeholder="Ej: entrevista de trabajo en inglés, conseguir mi primer empleo como desarrollador..."></textarea></label>
+        <button type="submit">Guardar</button>
+        <span id="profile-saved" class="muted hidden">Guardado ✓</span>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
