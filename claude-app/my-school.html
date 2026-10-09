@@ -536,6 +536,8 @@ const store = { ref: null, writing: false, again: false, timer: null };
 function normalize(data) {
   const base = emptyState();
   if (!data || typeof data !== "object") return base;
+  // Los datos que llegan de la cuenta vienen congelados (solo lectura): trabajamos sobre una copia.
+  data = JSON.parse(JSON.stringify(data));
   return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases), days: data.days && typeof data.days === "object" && !Array.isArray(data.days) ? data.days : {}, course: data.course && typeof data.course === "object" && !Array.isArray(data.course) ? data.course : {} };
 }
 function loadLocal() { try { const raw = localStorage.getItem(LOCAL_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
@@ -597,7 +599,7 @@ const ERRORS = {
   refused: "La IA no quiso responder a esto. Prueba con otra cosa.",
   unavailable: "Abre esta página en claude.ai con tu cuenta para usar la IA.",
 };
-const errText = (e) => ERRORS[e?.code] ?? "Algo falló al hablar con la IA. Vuelve a intentarlo.";
+const errText = (e) => ERRORS[e?.code] ?? (e instanceof Error ? `Algo falló en la app (${e.message}). Vuelve a intentarlo y, si se repite, avísame con una captura.` : "Algo falló al hablar con la IA. Vuelve a intentarlo.");
 async function askJSON(prompt, opts = {}) {
   const s = await samplerP;
   if (!s) throw { code: "unavailable" };
@@ -1262,6 +1264,7 @@ async function check(dunno) {
     $("#continue").onclick = () => { Q.i++; Q.i >= total() ? finishSession() : renderQuestion(); };
     $("#continue").focus({ preventScroll: true });
   } catch (err) {
+    console.error("Error al corregir", err);
     body().querySelectorAll("textarea, input, button").forEach((el) => (el.disabled = false));
     foot(`<p class="error">${esc(errText(err))}</p><button class="btn block" id="retry">Volver a intentar</button>`);
     $("#retry").onclick = () => check(dunno);
