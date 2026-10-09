@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14a08e"/>
+      <stop offset="1" stop-color="#075e53"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- burbuja de conversación -->
+  <path d="M112 132h288a36 36 0 0 1 36 36v150a36 36 0 0 1-36 36H246l-78 62v-62h-56a36 36 0 0 1-36-36V168a36 36 0 0 1 36-36z" fill="#ffffff"/>
+  <!-- Aa y { } dentro -->
+  <text x="190" y="276" text-anchor="middle" font-family="Bricolage Grotesque, Arial Black, sans-serif" font-weight="800" font-size="104" fill="#0b7a6c">Aa</text>
+  <text x="326" y="274" text-anchor="middle" font-family="JetBrains Mono, Menlo, monospace" font-weight="700" font-size="96" fill="#ea580c">{}</text>
+  <!-- llama de racha -->
+  <circle cx="388" cy="140" r="48" fill="#ea580c"/>
+  <path d="M388 110c9 16 23 25 23 44a23 23 0 0 1-46 0c0-11 5-18 11-23 0 9 5 14 11 14-4-12-4-23 1-35z" fill="#ffd9b8"/>
+</svg>
