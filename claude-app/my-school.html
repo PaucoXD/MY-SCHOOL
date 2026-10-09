@@ -180,6 +180,9 @@ label.field span.muted { font-weight: 400; }
 .tests { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
 .test-run { border: 1px solid var(--line); border-left: 5px solid var(--bad); border-radius: 0 12px 12px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
 .test-run.ok { border-left-color: var(--good); }
+.preview-wrap { display: flex; flex-direction: column; gap: 6px; }
+.preview { border: 2px solid var(--line); border-radius: 14px; overflow: auto; min-height: 120px; max-height: 340px; background: #fff; }
+.web-offer { border-color: var(--flame); }
 .levels { display: flex; flex-direction: column; gap: 10px; }
 .levels .btn { text-align: left; }
 .finish { align-items: center; text-align: center; gap: 16px; padding-top: 24px; }
@@ -255,6 +258,12 @@ label.field span.muted { font-weight: 400; }
         <p class="muted" id="today-xp">0 de 50 puntos</p>
         <div class="week" id="week"></div>
       </div>
+    </div>
+    <div class="card web-offer" id="web-offer" hidden>
+      <span class="eyebrow">Nuevo</span>
+      <h3>Aprende a hacer páginas web</h3>
+      <p class="muted">Empieza por HTML, sigue con CSS y luego JavaScript. Ves tu página mientras la escribes.</p>
+      <div class="row"><button class="btn grow" id="web-yes">Empezar con HTML</button><button class="btn ghost" id="web-no">Ahora no</button></div>
     </div>
     <div id="track-cards" class="view"></div>
     <button class="card action" id="home-talk"><span class="badge en">🗣️</span><div><b>Habla con un nativo</b><span class="muted">Conversaciones reales con voz</span></div><span class="go">›</span></button>
@@ -350,8 +359,8 @@ label.field span.muted { font-weight: 400; }
         <select name="programmingLevel" id="p-plevel"><option value="desde cero">Desde cero</option><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option></select>
       </label>
       <label class="field">Lenguaje
-        <select name="programmingLanguage" id="p-lang"><option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>TypeScript</option><option>SQL</option></select>
-        <span class="muted">Con JavaScript tu código se prueba de verdad.</span>
+        <select name="programmingLanguage" id="p-lang"><option value="Web">Desarrollo web (HTML, CSS y JavaScript)</option><option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>TypeScript</option><option>SQL</option></select>
+        <span class="muted">Con Desarrollo web y JavaScript tu código se comprueba de verdad.</span>
       </label>
       <label class="field">Para qué quieres aprender
         <textarea name="goals" id="p-goals" rows="2" placeholder="Ej: hablar con clientes en inglés, conseguir trabajo de programador…"></textarea>
@@ -413,7 +422,7 @@ function md(text) {
 const TRACKS = ["english", "programming"];
 const DAY = 86400000, PASS = 70, ALPHA = 0.35;
 function emptyState() {
-  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "desde cero", goals: "", levelChosen: {}, dailyGoal: 50 }, skills: {}, history: [], phrases: [], days: {} };
+  return { profile: { englishLevel: "A2", programmingLanguage: "Web", programmingLevel: "desde cero", goals: "", levelChosen: {}, dailyGoal: 50 }, skills: {}, history: [], phrases: [], days: {} };
 }
 let S = emptyState();
 const slug = (t) => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -637,6 +646,81 @@ self.onmessage = async (ev) => {
 const stripFences = (c) => { const m = /^\s*```[\w+-]*\n([\s\S]*?)\n?```\s*$/.exec(c); return m ? m[1] : c; };
 const parsesJSON = (t) => { try { JSON.parse(t); return true; } catch { return false; } };
 
+// ================= HTML y CSS: vista previa y comprobaciones automáticas =================
+// La página del alumno se pinta dentro de un shadow DOM: su CSS no afecta a la app y sus scripts no se ejecutan.
+const CHECK_TYPES = ["exists", "count", "text", "attr", "style"];
+const scopeCss = (css) => css.replace(/(^|[\s,{}>+~(])(html|body|:root)(?=[\s,{.:#\[>+~)]|$)/g, "$1.__body");
+function renderPage(host, code) {
+  let root = host.shadowRoot;
+  if (!root) {
+    root = host.attachShadow({ mode: "open" });
+    root.addEventListener("click", (e) => { if (e.target.closest?.("a, button")) e.preventDefault(); });
+    root.addEventListener("submit", (e) => e.preventDefault(), true);
+  }
+  const doc = new DOMParser().parseFromString(code, "text/html");
+  doc.querySelectorAll("script, iframe, object, embed, link, meta, base, frame").forEach((n) => n.remove());
+  const css = [...doc.querySelectorAll("style")].map((n) => n.textContent).join("\n");
+  doc.querySelectorAll("style").forEach((n) => n.remove());
+  doc.querySelectorAll("*").forEach((el) => [...el.attributes].forEach((a) => { if (/^on/i.test(a.name) || /^\s*javascript:/i.test(a.value)) el.removeAttribute(a.name); }));
+  root.innerHTML = `<style>.__body{display:block;margin:0;padding:12px;min-height:100%;background:#fff;color:#111;font:16px/1.3 "Times New Roman",Times,serif}${scopeCss(css)}</style><div class="__body"></div>`;
+  const body = root.querySelector(".__body");
+  body.innerHTML = doc.body.innerHTML;
+  const bs = doc.body.getAttribute("style"), bc = doc.body.getAttribute("class");
+  if (bs) body.setAttribute("style", bs);
+  if (bc) body.className = "__body " + bc;
+  return { root, body };
+}
+function runChecks(code, checks) {
+  const host = document.createElement("div");
+  host.style.cssText = "position:absolute;left:-10000px;top:0;width:420px;";
+  document.body.append(host);
+  try {
+    const { root, body } = renderPage(host, code);
+    const norm = (t) => String(t).replace(/\s+/g, " ").trim().toLowerCase();
+    const results = checks.map((c) => {
+      try {
+        const els = /^\s*(html|body|:root)\s*$/i.test(c.selector) ? [body] : [...body.querySelectorAll(c.selector)];
+        const el = els[0], v = c.value.trim();
+        const none = { passed: false, detail: `no encuentro ningún «${c.selector}»` };
+        if (c.type === "exists") return el ? { passed: true } : none;
+        if (c.type === "count") { const n = Math.max(1, parseInt(v, 10) || 1); return { passed: els.length >= n, detail: `hay ${els.length} y se necesitan ${n}` }; }
+        if (!el) return none;
+        if (c.type === "text") { const ok = els.some((e) => norm(e.textContent).includes(norm(v))); return { passed: ok, detail: `no contiene el texto «${v}»` }; }
+        if (c.type === "attr") {
+          const [name, ...rest] = v.split("="), want = norm(rest.join("="));
+          const ok = els.some((e) => e.hasAttribute(name.trim()) && (!want || norm(e.getAttribute(name.trim())).includes(want)));
+          return { passed: ok, detail: `le falta el atributo ${v}` };
+        }
+        if (c.type === "style") {
+          const i = v.indexOf(":");
+          const prop = v.slice(0, i).trim().toLowerCase(), val = v.slice(i + 1).trim().replace(/;$/, "");
+          const ok = els.some((e) => {
+            const probe = document.createElement(e.tagName.toLowerCase());
+            probe.style.setProperty(prop, val);
+            (e.parentNode ?? root).append(probe);
+            const want = getComputedStyle(probe).getPropertyValue(prop), got = getComputedStyle(e).getPropertyValue(prop);
+            probe.remove();
+            return want !== "" && want === got;
+          });
+          return { passed: ok, detail: `${prop} no es ${val} (es ${getComputedStyle(el).getPropertyValue(prop) || "otro valor"})` };
+        }
+        return { passed: false, detail: "comprobación desconocida" };
+      } catch {
+        return { passed: false, detail: `selector no válido: ${c.selector}` };
+      }
+    });
+    const out = checks.map((c, i) => ({ description: c.description, passed: results[i].passed, detail: results[i].passed ? "" : results[i].detail }));
+    return { error: null, results: out, passed: out.filter((r) => r.passed).length, total: out.length };
+  } finally {
+    host.remove();
+  }
+}
+function checkRunHTML(run) {
+  const ok = run.passed === run.total;
+  return `<div class="test-run ${ok ? "ok" : ""}"><b>${ok ? "✓" : "✗"} ${run.passed} de ${run.total} comprobaciones</b>
+    <ul class="tests">${run.results.map((r) => `<li>${r.passed ? "✓" : "✗"} ${esc(r.description)}${r.passed ? "" : `<br><span class="muted">${esc(r.detail)}</span>`}</li>`).join("")}</ul></div>`;
+}
+
 // ================= Racha, puntos y meta del día =================
 const todayKey = (d = new Date()) => d.toLocaleDateString("en-CA");
 function addXP(xp, exercises = 0) {
@@ -659,7 +743,7 @@ const goal = () => Number(S.profile.dailyGoal) || 50;
 
 const TRACK_INFO = {
   english: { name: "Inglés", badge: "Aa", cls: "en", level: () => `Nivel ${S.profile.englishLevel}` },
-  programming: { name: "Programación", badge: "{ }", cls: "code", level: () => `${S.profile.programmingLanguage} · ${({ "desde cero": "desde cero", principiante: "principiante", intermedio: "intermedio", avanzado: "avanzado" })[S.profile.programmingLevel] ?? ""}` },
+  programming: { name: "Programación", badge: "{ }", cls: "code", level: () => `${S.profile.programmingLanguage === "Web" ? "Web: HTML, CSS y JS" : S.profile.programmingLanguage} · ${({ "desde cero": "desde cero", principiante: "principiante", intermedio: "intermedio", avanzado: "avanzado" })[S.profile.programmingLevel] ?? ""}` },
 };
 function renderHome() {
   const today = S.days[todayKey()]?.xp ?? 0;
@@ -707,11 +791,18 @@ function renderHome() {
     const topic = f.querySelector("input").value.trim();
     if (topic) startSession(f.dataset.topicForm, topic);
   }));
+  $("#web-offer").hidden = S.profile.programmingLanguage === "Web" || Boolean(S.profile.webOffered);
   const dueP = duePhrases().length;
   $("#home-phrases").hidden = S.phrases.length === 0;
   $("#home-phrases-n").textContent = dueP ? `${dueP} para repasar hoy` : `${S.phrases.length} guardadas · nada pendiente`;
 }
 $("#home-talk").onclick = () => go("talk");
+$("#web-yes").onclick = () => {
+  Object.assign(S.profile, { programmingLanguage: "Web", webOffered: true });
+  save();
+  startSession("programming");
+};
+$("#web-no").onclick = () => { S.profile.webOffered = true; save(); renderHome(); };
 $("#home-phrases").onclick = () => { go("talk"); $("#phrase-box").scrollIntoView({ behavior: "smooth" }); };
 
 // ================= Lección de 5 ejercicios =================
@@ -807,8 +898,9 @@ const answerValue = () => {
 function renderQuestion() {
   const ex = Q.ex;
   const hasTests = ex.tests.length > 0;
-  const isCode = hasTests || ex.kind === "code" || ex.kind === "fix_bug";
-  const input = hasTests
+  const isHtml = ex.kind === "html";
+  const isCode = hasTests || isHtml || ex.kind === "code" || ex.kind === "fix_bug";
+  const input = hasTests || isHtml
     ? `<textarea id="answer" class="code-editor" rows="${Math.max(7, ex.starter_code.split("\n").length + 2)}" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(ex.starter_code)}</textarea>`
     : ex.options.length
       ? `<div class="options">${ex.options.map((o, i) => `<label><input type="radio" name="opt" value="${i}"><span class="opt-key">${i + 1}</span><span>${esc(o)}</span></label>`).join("")}</div>`
@@ -819,8 +911,11 @@ function renderQuestion() {
     <p class="question">${esc(ex.instructions)}</p>
     ${ex.content ? md(ex.content) : ""}
     ${hasTests ? testList(ex) : ""}
+    ${isHtml && ex.checks.length ? `<details><summary class="muted">Ver lo que se va a comprobar</summary><ul class="tests">${ex.checks.map((c) => `<li>${esc(c.description)}</li>`).join("")}</ul></details>` : ""}
     ${input}
+    ${isHtml ? '<div class="preview-wrap"><span class="eyebrow">Tu página</span><div id="preview" class="preview"></div></div>' : ""}
     ${hasTests ? '<button class="btn ghost" id="run">▶ Probar mi código</button><div id="run-out"></div>' : ""}
+    ${isHtml && ex.checks.length ? '<button class="btn ghost" id="run-checks">▶ Comprobar mi página</button><div id="run-out"></div>' : ""}
     <button class="link" id="hint-btn">💡 Ver una pista</button>
     <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>`;
   foot(`<div class="row"><button class="btn ghost" id="dunno">No lo sé</button><button class="btn" id="check" disabled>Comprobar</button></div>`);
@@ -831,6 +926,13 @@ function renderQuestion() {
   $("#hint-btn").onclick = () => { $("#hint").hidden = false; $("#hint-btn").hidden = true; };
   $("#dunno").onclick = () => check(true);
   $("#check").onclick = () => check(false);
+  if (isHtml) {
+    let t;
+    const paint = () => renderPage($("#preview"), $("#answer").value);
+    paint();
+    $("#answer").addEventListener("input", () => { clearTimeout(t); t = setTimeout(paint, 250); });
+    $("#run-checks")?.addEventListener("click", () => ($("#run-out").innerHTML = checkRunHTML(runChecks($("#answer").value, ex.checks))));
+  }
   if (hasTests) {
     $("#run").onclick = async () => {
       $("#run").disabled = true;
@@ -861,9 +963,10 @@ async function check(dunno) {
     const tone = r.verdict === "correcto" ? "good" : r.verdict === "casi" ? "mid" : "bad";
     const title = { correcto: "¡Correcto!", casi: "¡Casi!", incorrecto: dunno ? "Vamos a verlo" : "No del todo" }[r.verdict];
     const short = dunno ? "Aquí arriba tienes cómo se resuelve, paso a paso." : str(r.g?.tip) || str(r.g?.mistake_summary);
-    const isCode = ex.tests.length || ex.kind === "code" || ex.kind === "fix_bug";
-    body().insertAdjacentHTML("beforeend", `<div class="card" id="explain" ${r.verdict === "correcto" && !r.testRun ? "hidden" : ""}>
+    const isCode = ex.tests.length || ex.kind === "code" || ex.kind === "fix_bug" || ex.kind === "html";
+    body().insertAdjacentHTML("beforeend", `<div class="card" id="explain" ${r.verdict === "correcto" && !r.testRun && !r.checkRun ? "hidden" : ""}>
       ${r.testRun ? testRunHTML(r.testRun, ex.function_name) : ""}
+      ${r.checkRun ? checkRunHTML(r.checkRun) : ""}
       ${md(str(r.g?.feedback))}
       <details ${dunno ? "open" : ""}><summary>Respuesta correcta</summary>${isCode ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>
       <p class="muted">Lo repasarás ${r.sk.intervalDays === 0 ? "pronto" : whenText(r.sk.dueAt)}.</p></div>`);
@@ -872,7 +975,7 @@ async function check(dunno) {
       <div class="row">${$("#explain").hidden ? '<button class="btn ghost" id="why">Ver explicación</button>' : ""}<button class="btn" id="continue">Continuar</button></div>`, tone);
     $("#why")?.addEventListener("click", () => { $("#explain").hidden = false; $("#why").remove(); scrollToExplain(); });
     body().classList.add("graded");
-    if (r.verdict !== "correcto" || r.testRun) scrollToExplain();
+    if (r.verdict !== "correcto" || r.testRun || r.checkRun) scrollToExplain();
     $("#continue").onclick = () => { Q.i++; Q.i >= LESSON_LEN ? finishSession() : nextExercise(); };
     $("#continue").focus({ preventScroll: true });
   } catch (err) {
@@ -932,7 +1035,8 @@ Responde SOLO con un objeto JSON:
 
 // Corrige un ejercicio, lo registra en el progreso y devuelve el resultado.
 async function gradeExercise(ex, answer, dunno) {
-  const testRun = ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null;
+  const checkRun = ex.checks?.length && !dunno ? runChecks(answer, ex.checks) : null;
+  const testRun = checkRun ?? (ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null);
   const g = await askJSON(GRADE_PROMPT(ex, answer, dunno, testRun), { cache: false });
   let score = clamp(g?.score, 0, 100);
   let verdict = ["correcto", "casi", "incorrecto"].includes(g?.verdict) ? g.verdict : score >= 85 ? "correcto" : score >= 70 ? "casi" : "incorrecto";
@@ -944,7 +1048,7 @@ async function gradeExercise(ex, answer, dunno) {
   }
   if (dunno) { score = 0; verdict = "incorrecto"; }
   recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
-  return { g, score, verdict, testRun, sk: S.skills[skillKey(ex.track, ex.skill)] };
+  return { g, score, verdict, testRun: checkRun ? null : testRun, checkRun, sk: S.skills[skillKey(ex.track, ex.skill)] };
 }
 function whenText(iso) {
   const d = Math.round((new Date(iso) - Date.now()) / DAY);
@@ -959,19 +1063,27 @@ function pickReview(track) {
   return due.find((s) => s.name !== last) ?? due[0] ?? null;
 }
 const PROG_LEVEL = {
-  "desde cero": `NUNCA HA PROGRAMADO. Una sola idea por ejercicio. La lesson la explica desde cero, con una comparación de la vida diaria y un ejemplo de 1-3 líneas comentado.
-El ejercicio es muy fácil (difficulty 1) y de uno de estos tipos: multiple_choice, predict_output ("¿qué muestra este código?") o fill_blank (completar UNA palabra o UNA línea).
-Código de 1-4 líneas. Nada de pedir escribir una función entera. Avanza en este orden: qué es un programa y console.log, valores y variables, números y texto,
-comparaciones (true/false), if/else, bucles, arrays, funciones.`,
+  "desde cero": `NUNCA HA PROGRAMADO. Una sola idea por ejercicio. La lesson la explica desde cero, con una comparación de la vida diaria y un ejemplo corto comentado.
+El ejercicio es muy fácil (difficulty 1): multiple_choice, predict_output ("¿qué muestra este código?"), fill_blank (completar UNA palabra o línea)
+o, en HTML/CSS, kind "html" escribiendo 1-3 líneas. Nada de pedir escribir una función entera.`,
   principiante: "Sabe lo básico (variables, if, bucles sencillos). Ejercicios cortos; si pides código, como mucho 3-6 líneas. La lesson incluye un ejemplo resuelto parecido.",
   intermedio: "Se maneja con funciones, arrays y objetos. Puede escribir funciones de 5-15 líneas.",
   avanzado: "Programa con soltura: algoritmos, estructuras de datos, asincronía, buenas prácticas.",
 };
+const PATHS = {
+  Web: `Camino de desarrollo web, en este orden: HTML (qué es una etiqueta, títulos h1-h6, párrafos, negrita y cursiva, listas, enlaces, imágenes,
+botones, estructura de una página) → CSS (qué es una regla, color, fondo, tamaño de letra, fuentes, márgenes y relleno, bordes, clases, flexbox) →
+JavaScript (console.log, variables, números y texto, if/else, bucles, arrays, funciones y al final cambiar la página con document.querySelector y eventos).
+Mira su progreso: no pases al siguiente bloque hasta que domine lo básico del anterior.`,
+  JavaScript: "Camino: qué es un programa y console.log, valores y variables, números y texto, comparaciones, if/else, bucles, arrays, funciones, objetos.",
+};
+const langName = (l) => (l === "Web" ? "desarrollo web (HTML, CSS y JavaScript)" : l);
 const lessonNeeded = (track) => (track === "programming" ? ["desde cero", "principiante"].includes(S.profile.programmingLevel) : ["A1", "A2"].includes(S.profile.englishLevel));
 function exercisePrompt({ track, focus, review, runtime, retryReason }) {
   const topic = track === "english"
     ? "inglés para hablar con nativos: prioriza el inglés real (phrasal verbs, expresiones, contracciones, registro coloquial vs. formal, cómo reaccionar en una conversación) frente al inglés de libro, con frases de situaciones reales"
-    : `programación en ${S.profile.programmingLanguage}. Nivel del alumno: ${PROG_LEVEL[S.profile.programmingLevel] ?? PROG_LEVEL.principiante}`;
+    : `programación en ${langName(S.profile.programmingLanguage)}. ${PATHS[S.profile.programmingLanguage] ?? ""}
+Nivel del alumno: ${PROG_LEVEL[S.profile.programmingLevel] ?? PROG_LEVEL.principiante}`;
   let selection;
   if (focus) selection = `El alumno pidió practicar: ${focus}`;
   else if (review) selection = `Es un REPASO programado (repetición espaciada) de la habilidad "${review.name}" (dominio ${review.mastery}/100).
@@ -990,6 +1102,17 @@ expected_json = string con el valor JSON); reference_answer = la función comple
 - reference_answer: SOLO el código completo de la solución, sin markdown. Se comprueba ejecutándolo contra tus tests.
 Para cualquier otro kind deja function_name y starter_code vacíos y tests como [].`
     : "Deja function_name y starter_code vacíos y tests como [].";
+  const htmlRules = runtime === "web"
+    ? `Para HTML y CSS usa kind "html": el alumno escribe HTML (con una etiqueta <style> si hay CSS) y ve su página en una vista previa.
+- starter_code: el punto de partida (vacío, o con parte hecha si solo debe completar algo).
+- reference_answer: SOLO el código HTML completo de la solución, sin markdown.
+- checks: 2-5 comprobaciones automáticas, cada una {"description": "qué se comprueba, en español", "selector": "selector CSS (h1, ul li, .titulo, button)",
+  "type": "exists|count|text|attr|style", "value": "..."}. exists: value "". count: el mínimo de elementos ("3"). text: texto que debe contener.
+  attr: "href" o "alt=gato". style: "propiedad: valor" ("color: red", "font-size: 32px", "background-color: yellow").
+  Deben pasar con tu reference_answer y aceptar soluciones razonables distintas: no exijas textos exactos que el enunciado no pida.
+- Las imágenes externas no cargan en la vista previa: en <img> comprueba el atributo alt, no la foto.
+Las reglas de JavaScript de abajo son solo para cuando le toque JavaScript.`
+    : "";
   return `${TUTOR}
 
 Crea UN ejercicio de ${topic}. Debe poder responderse en 1-5 minutos. Varía el tipo.
@@ -1004,15 +1127,17 @@ ${learnerContext(track)}
 
 ${selection}
 
+${htmlRules}
 ${codeRules}
 ${retryReason ? `\nUn intento anterior se descartó: ${retryReason}. Asegúrate de que la solución pasa todos los tests.` : ""}
 
 Responde SOLO con un objeto JSON con estas claves:
-{"lesson": "mini-lección en markdown o vacío", "skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept",
+{"lesson": "mini-lección en markdown o vacío", "skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept|html",
  "difficulty": 1-5, "instructions": "instrucción breve en español", "content": "enunciado (markdown permitido)",
  "options": ["solo si es multiple_choice, si no []"], "hint": "pista", "reference_answer": "respuesta correcta o solución modelo",
  "why_this_exercise": "una frase al alumno de por qué este ejercicio", "function_name": "", "starter_code": "",
- "tests": [{"description": "qué comprueba", "args_json": "[1, 2]", "expected_json": "3"}]}`;
+ "tests": [{"description": "qué comprueba", "args_json": "[1, 2]", "expected_json": "3"}],
+ "checks": [{"description": "hay un título principal", "selector": "h1", "type": "exists", "value": ""}]}`;
 }
 function cleanExercise(x) {
   return {
@@ -1021,26 +1146,40 @@ function cleanExercise(x) {
     lesson: str(x?.lesson), hint: str(x?.hint), reference_answer: str(x?.reference_answer), why: str(x?.why_this_exercise),
     function_name: str(x?.function_name), starter_code: str(x?.starter_code),
     tests: arr(x?.tests).map((t) => ({ description: str(t?.description), args_json: str(t?.args_json), expected_json: str(t?.expected_json) })),
+    checks: arr(x?.checks).map((c) => ({ description: str(c?.description), selector: str(c?.selector).trim(), type: str(c?.type), value: str(c?.value) }))
+      .filter((c) => c.selector && CHECK_TYPES.includes(c.type)),
   };
 }
 async function createExercise(track, focus, review) {
-  const runtime = track === "programming" && S.profile.programmingLanguage === "JavaScript";
+  const lang = S.profile.programmingLanguage;
+  const runtime = track !== "programming" ? null : lang === "Web" ? "web" : lang === "JavaScript" ? "js" : null;
   let retryReason, ex;
   for (let attempt = 0; attempt < 2; attempt++) {
     ex = cleanExercise(await askJSON(exercisePrompt({ track, focus, review, runtime, retryReason }), { cache: false }));
     if (!ex.instructions && !ex.content) throw { code: "invalid_json" };
     if (review) ex.skill = review.name;
-    if (!runtime || !ex.tests.length) return { ...ex, tests: [], track };
+    if (ex.kind === "html") {
+      if (runtime !== "web") return { ...ex, tests: [], checks: [], track };
+      ex.reference_answer = stripFences(ex.reference_answer);
+      const run = runChecks(ex.reference_answer, ex.checks);
+      const good = ex.checks.filter((c, i) => run.results[i].passed);
+      if (good.length >= 2) return { ...ex, tests: [], checks: good, track };
+      const f = run.results.find((r) => !r.passed);
+      retryReason = `tus comprobaciones no pasan con tu propia solución (p. ej. "${f?.description}": ${f?.detail})`;
+      if (attempt === 1) return { ...ex, tests: [], checks: [], track };
+      continue;
+    }
+    if (!runtime || !ex.tests.length) return { ...ex, tests: [], checks: [], track };
     ex.reference_answer = stripFences(ex.reference_answer);
     if (!validName(ex.function_name)) { retryReason = "nombre de función no válido"; continue; }
     const tests = ex.tests.filter((t) => parsesJSON(t.expected_json) && parsesJSON(t.args_json) && Array.isArray(JSON.parse(t.args_json)));
     const run = await runTests(ex.reference_answer, ex.function_name, tests);
     const good = run.results.filter((r) => r.passed).map(({ description, args_json, expected_json }) => ({ description, args_json, expected_json }));
-    if (good.length >= 2) return { ...ex, tests: good, track };
+    if (good.length >= 2) return { ...ex, tests: good, checks: [], track };
     const f = run.results.find((r) => !r.passed);
     retryReason = run.error ?? `la solución no pasa sus tests (p. ej. "${f?.description}": dio ${f?.actual ?? f?.error}, se esperaba ${f?.expected_json})`;
   }
-  return { ...ex, tests: [], track }; // sin tests fiables: lo corrige solo la IA
+  return { ...ex, tests: [], checks: [], track }; // sin tests fiables: lo corrige solo la IA
 }
 
 // ================= Voz =================
