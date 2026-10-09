@@ -896,7 +896,7 @@ const CURRICULA = {
         ["Reaccionar a un clic", "addEventListener('click', ...) en un botón."],
       ]),
     ],
-    start: { "desde cero": 0, principiante: 11, intermedio: 21, avanzado: 28 },
+    start: { "desde cero": 0, principiante: 4, intermedio: 11, avanzado: 21 },
   },
   code: { name: "Programación", lessons: null, start: { "desde cero": 0, principiante: 4, intermedio: 11, avanzado: 13 } },
 };
@@ -917,11 +917,17 @@ function course(track) {
   if (!S.course[key]) S.course[key] = { start: curriculum(track).start[levelOf(track)] ?? 0, done: {} };
   return S.course[key];
 }
+// El punto de partida lo marca el nivel, pero si haces una lección anterior, el curso sigue desde ahí en orden.
+function effectiveStart(track) {
+  const c = course(track), lessons = curriculum(track).lessons;
+  const firstDone = lessons.findIndex((l) => c.done[slug(l.title)]);
+  return firstDone >= 0 ? Math.min(c.start, firstDone) : c.start;
+}
 // La lección actual: la primera sin hacer desde el punto de partida; si no queda ninguna, la primera sin hacer.
 function currentIndex(track) {
   const c = course(track), lessons = curriculum(track).lessons;
   const isDone = (i) => Boolean(c.done[slug(lessons[i].title)]);
-  for (let i = c.start; i < lessons.length; i++) if (!isDone(i)) return i;
+  for (let i = effectiveStart(track); i < lessons.length; i++) if (!isDone(i)) return i;
   for (let i = 0; i < lessons.length; i++) if (!isDone(i)) return i;
   return -1;
 }
@@ -1069,13 +1075,13 @@ function askLevel(track) {
 function showSyllabus(track) {
   openSession();
   Q.mode = "syllabus";
-  const cur = curriculum(track), c = course(track), idx = currentIndex(track);
+  const cur = curriculum(track), c = course(track), idx = currentIndex(track), start = effectiveStart(track);
   setBar(doneCount(track) / cur.lessons.length);
   let unit = "";
   const rows = cur.lessons.map((l, i) => {
     const done = c.done[slug(l.title)];
     const head = l.unit !== unit ? `<h3 class="unit">Unidad ${esc((unit = l.unit))}</h3>` : "";
-    const state = done ? "done" : i === idx ? "current" : i < c.start ? "skipped" : "";
+    const state = done ? "done" : i === idx ? "current" : i < start ? "skipped" : "";
     const icon = done ? "✓" : i === idx ? "▶" : String(i + 1);
     return `${head}<button class="lesson-row ${state}" data-go-lesson="${i}"><span class="dot">${icon}</span><span class="grow"><b>${esc(l.title)}</b><span class="muted">${esc(l.goal)}</span></span></button>`;
   }).join("");
