@@ -174,6 +174,8 @@ label.field span.muted { font-weight: 400; }
 .options input { position: absolute; opacity: 0; pointer-events: none; }
 .options label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .options label:has(input:focus-visible) { outline: 3px solid var(--flame); }
+.options label.right { border-color: var(--good); background: var(--good-soft); }
+.options label.wrong { border-color: var(--bad); background: var(--bad-soft); }
 .opt-key { width: 30px; height: 30px; border-radius: 9px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; color: var(--muted); flex: none; }
 .options label:has(input:checked) .opt-key { border-color: var(--accent); color: var(--accent); }
 .code-editor { font-family: var(--f-mono); font-size: 0.9rem; white-space: pre; tab-size: 2; background: var(--sunk); }
@@ -183,6 +185,25 @@ label.field span.muted { font-weight: 400; }
 .preview-wrap { display: flex; flex-direction: column; gap: 6px; }
 .preview { border: 2px solid var(--line); border-radius: 14px; overflow: auto; min-height: 120px; max-height: 340px; background: #fff; }
 .web-offer { border-color: var(--flame); }
+.course-pos { display: flex; flex-direction: column; gap: 2px; }
+.course-pos b { font-family: var(--f-display); font-size: 1.15rem; }
+.syllabus { display: flex; flex-direction: column; gap: 8px; }
+.syllabus .unit { font-size: 0.95rem; color: var(--muted); margin-top: 10px; }
+.lesson-row { display: flex; gap: 12px; align-items: flex-start; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; cursor: pointer; }
+.lesson-row .grow { display: flex; flex-direction: column; gap: 2px; }
+.lesson-row .dot { width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: var(--sunk); color: var(--muted); }
+.lesson-row.done .dot { background: var(--good); color: #fff; }
+.lesson-row.current { border: 2px solid var(--accent); }
+.lesson-row.current .dot { background: var(--accent); color: var(--accent-ink); }
+.lesson-row.skipped { opacity: 0.6; }
+.learn { font-size: 1.05rem; }
+.learn pre { font-size: 0.95rem; }
+.phrases { gap: 10px; }
+.phrase { display: flex; gap: 12px; align-items: center; }
+.say.big { width: 46px; height: 46px; border-radius: 50%; font-size: 1.2rem; padding: 0; flex: none; background: var(--accent-soft); border-color: transparent; }
+.listen-btn { align-self: flex-start; border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 18px; padding: 16px 26px; font-size: 1.15rem; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.prompt { font-size: 1.1rem; }
+.loading { display: flex; flex-direction: column; gap: 8px; padding-top: 30px; }
 .levels { display: flex; flex-direction: column; gap: 10px; }
 .levels .btn { text-align: left; }
 .finish { align-items: center; text-align: center; gap: 16px; padding-top: 24px; }
@@ -422,7 +443,7 @@ function md(text) {
 const TRACKS = ["english", "programming"];
 const DAY = 86400000, PASS = 70, ALPHA = 0.35;
 function emptyState() {
-  return { profile: { englishLevel: "A2", programmingLanguage: "Web", programmingLevel: "desde cero", goals: "", levelChosen: {}, dailyGoal: 50 }, skills: {}, history: [], phrases: [], days: {} };
+  return { profile: { englishLevel: "A2", programmingLanguage: "Web", programmingLevel: "desde cero", goals: "", levelChosen: {}, dailyGoal: 50 }, skills: {}, history: [], phrases: [], days: {}, course: {} };
 }
 let S = emptyState();
 const slug = (t) => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -515,7 +536,7 @@ const store = { ref: null, writing: false, again: false, timer: null };
 function normalize(data) {
   const base = emptyState();
   if (!data || typeof data !== "object") return base;
-  return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases), days: data.days && typeof data.days === "object" && !Array.isArray(data.days) ? data.days : {} };
+  return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases), days: data.days && typeof data.days === "object" && !Array.isArray(data.days) ? data.days : {}, course: data.course && typeof data.course === "object" && !Array.isArray(data.course) ? data.course : {} };
 }
 function loadLocal() { try { const raw = localStorage.getItem(LOCAL_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
 function save() {
@@ -741,9 +762,173 @@ function streak() {
 const xpFor = (score) => (score >= 85 ? 15 : score >= 70 ? 10 : 5);
 const goal = () => Number(S.profile.dailyGoal) || 50;
 
+// ================= Temarios =================
+// Cada curso es una lista ordenada de lecciones agrupadas en unidades. Se avanza lección a lección.
+const U = (unit, items) => items.map(([title, goal]) => ({ unit, title, goal }));
+const CODE_BASICS = (lang) => [
+  ...U("1 · Primeros pasos", [
+    ["Mostrar mensajes", `Qué es un programa y cómo mostrar un mensaje en pantalla en ${lang}.`],
+    ["Variables", "Guardar datos con nombre y usarlos después."],
+    ["Números y operaciones", "Sumar, restar, multiplicar y dividir; el orden de las operaciones."],
+    ["Texto", "Escribir texto entre comillas y unir textos."],
+  ]),
+  ...U("2 · Decisiones", [
+    ["Comparaciones", "Verdadero y falso: mayor, menor, igual."],
+    ["if / else", "Hacer una cosa u otra según una condición."],
+    ["Varias condiciones", "else if y combinar condiciones con y / o."],
+  ]),
+  ...U("3 · Repetir", [
+    ["Bucle for", "Repetir algo un número de veces."],
+    ["Bucle while", "Repetir mientras se cumpla una condición."],
+  ]),
+  ...U("4 · Listas", [
+    ["Listas (arrays)", "Guardar varios valores juntos y leerlos por posición."],
+    ["Recorrer listas", "Recorrer una lista con un bucle para sumar, contar o buscar."],
+  ]),
+  ...U("5 · Funciones", [
+    ["Funciones", "Crear un bloque de código con nombre y llamarlo."],
+    ["Parámetros y return", "Pasar datos a una función y devolver un resultado."],
+  ]),
+  ...U("6 · Siguiente nivel", [
+    ["Objetos", "Agrupar datos con nombre (clave: valor)."],
+    ["Métodos de listas", "Transformar y filtrar listas (map, filter o su equivalente)."],
+    ["Retos de lógica", "Combinar todo para resolver problemas pequeños."],
+  ]),
+];
+const CURRICULA = {
+  english: {
+    name: "Inglés",
+    lessons: [
+      ...U("1 · Primeros pasos", [
+        ["Saludar y despedirse", "hello, hi, good morning, bye, see you; cuándo usar cada uno."],
+        ["Presentarte", "My name is..., I'm..., Nice to meet you."],
+        ["¿Cómo estás?", "How are you? / I'm good, thanks. And you? Respuestas naturales."],
+      ]),
+      ...U("2 · El verbo to be", [
+        ["To be: I am, you are", "Afirmativo de to be con todos los pronombres y sus contracciones (I'm, you're, he's...)."],
+        ["To be en negativo", "I'm not, he isn't, they aren't."],
+        ["Preguntas con to be", "Are you...? Is he...? y respuestas cortas (Yes, I am)."],
+      ]),
+      ...U("3 · Sobre ti", [
+        ["Números del 1 al 20", "Contar y decir números en conversaciones."],
+        ["Edad y de dónde eres", "I'm 25. I'm from Mexico. Where are you from?"],
+        ["Tu trabajo", "What do you do? I'm a developer. I work at/in..."],
+      ]),
+      ...U("4 · Tu día a día", [
+        ["Presente simple: I work", "Hablar de cosas habituales: I live, I work, I study."],
+        ["He / she + s", "La -s de la tercera persona: she works, he lives."],
+        ["Don't y do you...?", "Negativo y preguntas en presente simple."],
+        ["Rutinas y horas", "I get up at 7. What time do you...? Decir la hora."],
+      ]),
+      ...U("5 · Pedir y preguntar", [
+        ["Pedir con cortesía", "Can I get...? Could I have...? Please / thanks."],
+        ["Preguntas con what, where, when", "Wh- questions para pedir información."],
+        ["Precios y cantidades", "How much is it? How many...? Números grandes y precios."],
+      ]),
+      ...U("6 · Lo que pasa ahora", [
+        ["Presente continuo", "I'm working, she's coming: lo que pasa en este momento."],
+        ["Gustos", "I like, I love, I don't like + -ing."],
+      ]),
+      ...U("7 · El pasado", [
+        ["Was / were", "El pasado de to be."],
+        ["Pasado con -ed", "Verbos regulares en pasado: worked, played."],
+        ["Pasados irregulares", "Los más usados: went, had, got, did, saw, made."],
+        ["Preguntas en pasado", "Did you...? / I didn't..."],
+      ]),
+      ...U("8 · El futuro", [
+        ["Planes con going to", "I'm going to... (y cómo suena: gonna)."],
+        ["Will", "Decisiones al momento, promesas y ofrecimientos."],
+      ]),
+      ...U("9 · Inglés de nativo", [
+        ["Wanna, gonna, gotta", "Las formas que usan los nativos al hablar y cuándo NO usarlas."],
+        ["Phrasal verbs del día a día", "get up, pick up, find out, figure out, hang out."],
+        ["Reacciones naturales", "Oh really? No way! That's great. Same here."],
+        ["Small talk", "Hablar del tiempo, del finde y de planes de forma natural."],
+      ]),
+      ...U("10 · Más allá", [
+        ["Present perfect", "Have you ever...? I've been to..."],
+        ["Comparar", "bigger, more expensive, the best."],
+      ]),
+    ],
+    start: { A1: 0, A2: 6, B1: 16, B2: 22, C1: 25, C2: 25 },
+  },
+  web: {
+    name: "Desarrollo web",
+    lessons: [
+      ...U("1 · Tu primera página", [
+        ["Qué es HTML", "Qué es una etiqueta y cómo se escribe <h1>Hola</h1>."],
+        ["Párrafos", "Escribir texto con <p> y saltos de línea con <br>."],
+        ["Títulos de varios tamaños", "h1, h2 y h3 para ordenar una página."],
+        ["Negrita y cursiva", "<strong> y <em> para destacar texto."],
+      ]),
+      ...U("2 · Listas, enlaces e imágenes", [
+        ["Listas", "Listas con viñetas: <ul> y <li>."],
+        ["Listas numeradas", "Listas en orden con <ol>."],
+        ["Enlaces", "<a href> para ir a otra página."],
+        ["Imágenes", "<img src alt> y por qué importa el alt."],
+      ]),
+      ...U("3 · Estructura", [
+        ["Botones y campos", "<button> e <input> para que el usuario escriba o pulse."],
+        ["Partes de una página", "header, main y footer."],
+        ["Agrupar con div", "<div> para agrupar elementos."],
+      ]),
+      ...U("4 · CSS: dar estilo", [
+        ["Qué es CSS: color", "Una regla CSS dentro de <style>: selector { color: red; }."],
+        ["Fondos", "background-color para colorear el fondo."],
+        ["Tamaño y tipo de letra", "font-size y font-family."],
+        ["Clases", "class=\"...\" en HTML y .clase en CSS."],
+      ]),
+      ...U("5 · Cajas", [
+        ["Margen y relleno", "margin y padding."],
+        ["Bordes y esquinas", "border y border-radius."],
+        ["Ancho y alto", "width y height."],
+      ]),
+      ...U("6 · Colocar cosas", [
+        ["Centrar", "text-align: center y centrar cajas."],
+        ["Flexbox en fila", "display: flex para poner elementos en fila."],
+        ["Flexbox: espacios", "gap, justify-content y align-items."],
+      ]),
+      ...U("7 · JavaScript", CODE_BASICS("JavaScript").filter((l) => ["Mostrar mensajes", "Variables", "Texto", "if / else", "Bucle for", "Listas (arrays)", "Funciones"].includes(l.title)).map(({ title, goal }) => [title, goal])),
+      ...U("8 · JavaScript en tu página", [
+        ["Cambiar la página con JS", "document.querySelector y cambiar el texto de un elemento."],
+        ["Reaccionar a un clic", "addEventListener('click', ...) en un botón."],
+      ]),
+    ],
+    start: { "desde cero": 0, principiante: 11, intermedio: 21, avanzado: 28 },
+  },
+  code: { name: "Programación", lessons: null, start: { "desde cero": 0, principiante: 4, intermedio: 11, avanzado: 13 } },
+};
+const pathKey = (track) => {
+  if (track === "english") return "english";
+  const l = S.profile.programmingLanguage;
+  return l === "Web" ? "web" : `code-${slug(l)}`;
+};
+function curriculum(track) {
+  const key = pathKey(track);
+  if (key === "english" || key === "web") return CURRICULA[key];
+  return { ...CURRICULA.code, name: S.profile.programmingLanguage, lessons: CODE_BASICS(S.profile.programmingLanguage) };
+}
+const levelOf = (track) => (track === "english" ? S.profile.englishLevel : S.profile.programmingLevel);
+function course(track) {
+  const key = pathKey(track);
+  S.course ??= {};
+  if (!S.course[key]) S.course[key] = { start: curriculum(track).start[levelOf(track)] ?? 0, done: {} };
+  return S.course[key];
+}
+// La lección actual: la primera sin hacer desde el punto de partida; si no queda ninguna, la primera sin hacer.
+function currentIndex(track) {
+  const c = course(track), lessons = curriculum(track).lessons;
+  const isDone = (i) => Boolean(c.done[slug(lessons[i].title)]);
+  for (let i = c.start; i < lessons.length; i++) if (!isDone(i)) return i;
+  for (let i = 0; i < lessons.length; i++) if (!isDone(i)) return i;
+  return -1;
+}
+const doneCount = (track) => { const c = course(track); return curriculum(track).lessons.filter((l) => c.done[slug(l.title)]).length; };
+
+// ================= Inicio =================
 const TRACK_INFO = {
   english: { name: "Inglés", badge: "Aa", cls: "en", level: () => `Nivel ${S.profile.englishLevel}` },
-  programming: { name: "Programación", badge: "{ }", cls: "code", level: () => `${S.profile.programmingLanguage === "Web" ? "Web: HTML, CSS y JS" : S.profile.programmingLanguage} · ${({ "desde cero": "desde cero", principiante: "principiante", intermedio: "intermedio", avanzado: "avanzado" })[S.profile.programmingLevel] ?? ""}` },
+  programming: { name: "Programación", badge: "{ }", cls: "code", level: () => `${S.profile.programmingLanguage === "Web" ? "Desarrollo web" : S.profile.programmingLanguage} · ${S.profile.programmingLevel}` },
 };
 function renderHome() {
   const today = S.days[todayKey()]?.xp ?? 0;
@@ -766,21 +951,34 @@ function renderHome() {
   $("#week").innerHTML = week.join("");
 
   $("#track-cards").innerHTML = TRACKS.map((t) => {
-    const info = TRACK_INFO[t], sum = summary(t), due = sum.dueForReview.length;
-    const started = sum.totalAttempts > 0;
+    const info = TRACK_INFO[t], cur = curriculum(t), lessons = cur.lessons;
+    const idx = currentIndex(t), next = lessons[idx];
+    const done = doneCount(t), due = dueSkills(t).length;
+    const started = done > 0;
+    const needsLevel = !S.profile.levelChosen?.[t] && done === 0;
     return `<div class="card track-card">
       <div class="track-head"><span class="badge ${info.cls}">${info.badge}</span>
-        <div class="grow"><h3>${info.name}</h3><span class="muted">${esc(info.level())}</span></div>
-        ${due ? `<span class="chip flame">${due} por repasar</span>` : ""}</div>
-      ${started ? `<div class="meter" title="Dominio medio"><i style="width:${sum.averageMastery ?? 0}%"></i></div>` : ""}
-      <button class="btn block" data-start="${t}">${started ? "Continuar" : "Empezar"}</button>
+        <div class="grow"><h3>${info.name}</h3><span class="muted">${esc(info.level())}</span></div></div>
+      ${needsLevel
+        ? `<div class="course-pos"><b>Curso de ${esc(cur.name)}</b><span class="muted">${lessons.length} lecciones. Empiezas desde tu nivel.</span></div>`
+        : next
+        ? `<div class="course-pos"><span class="eyebrow">Unidad ${esc(next.unit)} · lección ${idx + 1} de ${lessons.length}</span><b>${esc(next.title)}</b></div>`
+        : `<div class="course-pos"><b>¡Has terminado el curso! 🎉</b><span class="muted">Sigue repasando para no olvidarlo.</span></div>`}
+      <div class="meter" title="${done} de ${lessons.length} lecciones"><i style="width:${(done / lessons.length) * 100}%"></i></div>
+      ${next ? `<button class="btn block" data-lesson="${t}">${started ? "Continuar" : "Empezar"}</button>` : ""}
+      <div class="row">
+        ${due ? `<button class="btn ghost small grow" data-review="${t}">🔁 Repasar (${due})</button>` : ""}
+        <button class="btn ghost small grow" data-syllabus="${t}">📚 Temario</button>
+      </div>
       <button class="link" data-topic="${t}">🎯 Practicar un tema concreto</button>
       <form class="topic-row" data-topic-form="${t}" hidden>
-        <input type="text" maxlength="120" placeholder="${t === "english" ? "Ej: phrasal verbs, pasado" : "Ej: bucles, listas"}">
+        <input type="text" maxlength="120" placeholder="${t === "english" ? "Ej: pedir comida, el pasado" : "Ej: listas, colores en CSS"}">
         <button class="btn small" type="submit">Ir</button>
       </form></div>`;
   }).join("");
-  $$("[data-start]").forEach((b) => (b.onclick = () => startSession(b.dataset.start)));
+  $$("[data-lesson]").forEach((b) => (b.onclick = () => openTrack(b.dataset.lesson)));
+  $$("[data-review]").forEach((b) => (b.onclick = () => startReview(b.dataset.review)));
+  $$("[data-syllabus]").forEach((b) => (b.onclick = () => showSyllabus(b.dataset.syllabus)));
   $$("[data-topic]").forEach((b) => (b.onclick = () => {
     const f = $(`[data-topic-form="${b.dataset.topic}"]`);
     f.hidden = !f.hidden;
@@ -789,7 +987,7 @@ function renderHome() {
   $$("[data-topic-form]").forEach((f) => (f.onsubmit = (e) => {
     e.preventDefault();
     const topic = f.querySelector("input").value.trim();
-    if (topic) startSession(f.dataset.topicForm, topic);
+    if (topic) startTopic(f.dataset.topicForm, topic);
   }));
   $("#web-offer").hidden = S.profile.programmingLanguage === "Web" || Boolean(S.profile.webOffered);
   const dueP = duePhrases().length;
@@ -797,17 +995,16 @@ function renderHome() {
   $("#home-phrases-n").textContent = dueP ? `${dueP} para repasar hoy` : `${S.phrases.length} guardadas · nada pendiente`;
 }
 $("#home-talk").onclick = () => go("talk");
+$("#home-phrases").onclick = () => { go("talk"); $("#phrase-box").scrollIntoView({ behavior: "smooth" }); };
 $("#web-yes").onclick = () => {
   Object.assign(S.profile, { programmingLanguage: "Web", webOffered: true });
   save();
-  startSession("programming");
+  openTrack("programming");
 };
 $("#web-no").onclick = () => { S.profile.webOffered = true; save(); renderHome(); };
-$("#home-phrases").onclick = () => { go("talk"); $("#phrase-box").scrollIntoView({ behavior: "smooth" }); };
 
-// ================= Lección de 5 ejercicios =================
-const LESSON_LEN = 5;
-const Q = { track: null, focus: "", i: 0, xp: 0, correct: 0, ex: null, busy: false };
+// ================= Pantalla de lección (a pantalla completa) =================
+const Q = { mode: null, track: null, idx: -1, lesson: null, pack: null, i: 0, xp: 0, correct: 0, ex: null, busy: false };
 const LEVEL_CHOICES = {
   programming: { q: "¿Has programado alguna vez?", opts: [["desde cero", "Nunca he programado"], ["principiante", "Sé un poco"], ["intermedio", "Me defiendo"], ["avanzado", "Programo con soltura"]] },
   english: { q: "¿Qué tal tu inglés?", opts: [["A1", "Casi nada"], ["A2", "Básico"], ["B1", "Me defiendo"], ["B2", "Bien"], ["C1", "Muy bien"]] },
@@ -817,39 +1014,25 @@ function foot(html, tone = "") {
   $("#s-foot").className = "session-foot " + tone;
   $("#s-foot-inner").innerHTML = html;
 }
-const setBar = () => ($("#s-pbar").style.width = `${(Q.i / LESSON_LEN) * 100}%`);
-
-function startSession(track, focus = "") {
-  Object.assign(Q, { track, focus, i: 0, xp: 0, correct: 0, ex: null, busy: false });
+const total = () => Q.pack?.exercises.length || 5;
+const setBar = (frac) => ($("#s-pbar").style.width = `${Math.round((frac ?? Q.i / total()) * 100)}%`);
+function openSession() {
   $("#session").hidden = false;
   document.body.style.overflow = "hidden";
   resetClose();
-  setBar();
-  const firstTime = !S.history.some((h) => h.track === track) && !S.profile.levelChosen?.[track];
-  if (firstTime) return askLevel(track);
-  nextExercise();
-}
-function askLevel(track) {
-  const c = LEVEL_CHOICES[track];
-  body().innerHTML = `<h2>${c.q}</h2><p class="muted">Así empiezo justo por tu nivel.</p>
-    <div class="levels">${c.opts.map(([v, l]) => `<button class="btn ghost block" data-level="${esc(v)}">${esc(l)}</button>`).join("")}</div>`;
-  foot("");
-  $$("[data-level]").forEach((b) => (b.onclick = () => {
-    S.profile[track === "programming" ? "programmingLevel" : "englishLevel"] = b.dataset.level;
-    S.profile.levelChosen = { ...S.profile.levelChosen, [track]: true };
-    save();
-    nextExercise();
-  }));
+  body().classList.remove("graded");
 }
 function closeSession() {
   $("#session").hidden = true;
   document.body.style.overflow = "";
+  Q.mode = null;
   renderHome();
 }
 function resetClose() { const c = $("#s-close"); c.classList.remove("confirm"); c.textContent = "✕"; c.dataset.armed = ""; }
 $("#s-close").onclick = () => {
   const c = $("#s-close");
-  if (Q.i > 0 && Q.i < LESSON_LEN && c.dataset.armed !== "1") {
+  const midway = Q.mode && Q.mode !== "syllabus" && Q.i > 0 && Q.i < total();
+  if (midway && c.dataset.armed !== "1") {
     c.dataset.armed = "1"; c.classList.add("confirm"); c.textContent = "¿Salir? Toca otra vez";
     setTimeout(resetClose, 3000);
     return;
@@ -857,26 +1040,108 @@ $("#s-close").onclick = () => {
   closeSession();
 };
 
-async function nextExercise() {
+// Entrar en una materia: la primera vez pregunta el nivel (decide desde qué lección empiezas).
+function openTrack(track, idx) {
+  const firstTime = !S.profile.levelChosen?.[track] && doneCount(track) === 0;
+  if (firstTime) return askLevel(track);
+  startLesson(track, idx ?? currentIndex(track));
+}
+function askLevel(track) {
+  openSession();
+  Q.mode = "syllabus";
+  setBar(0);
+  const c = LEVEL_CHOICES[track];
+  body().innerHTML = `<h2>${c.q}</h2><p class="muted">Así empiezo justo por tu nivel.</p>
+    <div class="levels">${c.opts.map(([v, l]) => `<button class="btn ghost block" data-level="${esc(v)}">${esc(l)}</button>`).join("")}</div>`;
+  foot("");
+  $$("[data-level]").forEach((b) => (b.onclick = () => {
+    S.profile[track === "programming" ? "programmingLevel" : "englishLevel"] = b.dataset.level;
+    S.profile.levelChosen = { ...S.profile.levelChosen, [track]: true };
+    const c2 = course(track);
+    if (!Object.keys(c2.done).length) c2.start = curriculum(track).start[b.dataset.level] ?? 0;
+    save();
+    startLesson(track, currentIndex(track));
+  }));
+}
+
+function showSyllabus(track) {
+  openSession();
+  Q.mode = "syllabus";
+  const cur = curriculum(track), c = course(track), idx = currentIndex(track);
+  setBar(doneCount(track) / cur.lessons.length);
+  let unit = "";
+  const rows = cur.lessons.map((l, i) => {
+    const done = c.done[slug(l.title)];
+    const head = l.unit !== unit ? `<h3 class="unit">Unidad ${esc((unit = l.unit))}</h3>` : "";
+    const state = done ? "done" : i === idx ? "current" : i < c.start ? "skipped" : "";
+    const icon = done ? "✓" : i === idx ? "▶" : String(i + 1);
+    return `${head}<button class="lesson-row ${state}" data-go-lesson="${i}"><span class="dot">${icon}</span><span class="grow"><b>${esc(l.title)}</b><span class="muted">${esc(l.goal)}</span></span></button>`;
+  }).join("");
+  body().innerHTML = `<h2>Temario de ${esc(cur.name)}</h2>
+    <p class="muted">${doneCount(track)} de ${cur.lessons.length} lecciones completadas. Toca cualquiera para hacerla.</p>
+    <div class="syllabus">${rows}</div>`;
+  foot('<button class="btn ghost block" id="syl-close">Volver</button>');
+  $("#syl-close").onclick = closeSession;
+  $$("[data-go-lesson]").forEach((b) => (b.onclick = () => startLesson(track, Number(b.dataset.goLesson))));
+  body().querySelector(".current")?.scrollIntoView({ block: "center" });
+}
+
+async function startLesson(track, idx) {
+  const cur = curriculum(track);
+  if (idx < 0 || idx >= cur.lessons.length) return showSyllabus(track);
+  openSession();
+  Object.assign(Q, { mode: "lesson", track, idx, lesson: cur.lessons[idx], pack: null, i: 0, xp: 0, correct: 0, ex: null });
+  await loadPack(() => createPack({ track, mode: "lesson", lesson: Q.lesson, idx, cur }));
+}
+async function startTopic(track, topic) {
+  openSession();
+  Object.assign(Q, { mode: "topic", track, idx: -1, lesson: { unit: "", title: topic, goal: `Lo que el alumno pidió practicar: ${topic}` }, pack: null, i: 0, xp: 0, correct: 0, ex: null });
+  await loadPack(() => createPack({ track, mode: "topic", lesson: Q.lesson }));
+}
+async function startReview(track) {
+  const due = dueSkills(track).slice(0, 5);
+  if (!due.length) return;
+  openSession();
+  Object.assign(Q, { mode: "review", track, idx: -1, lesson: { unit: "", title: "Repaso" }, pack: null, i: 0, xp: 0, correct: 0, ex: null });
+  await loadPack(() => createPack({ track, mode: "review", skills: due }));
+}
+async function loadPack(make) {
   Q.busy = true;
-  body().classList.remove("graded");
-  setBar();
-  const review = Q.focus ? null : pickReview(Q.track);
-  body().innerHTML = `<p class="thinking">${review ? `Preparando un repaso de «${esc(review.name)}»` : "Preparando tu ejercicio"}</p>`;
+  setBar(0);
+  body().innerHTML = `<div class="loading"><p class="eyebrow">${Q.mode === "review" ? "Repaso" : Q.lesson.unit ? `Unidad ${esc(Q.lesson.unit)}` : "Tema a medida"}</p>
+    <h2>${esc(Q.lesson.title)}</h2><p class="thinking">Preparando tu ${Q.mode === "review" ? "repaso" : "lección"}</p></div>`;
   foot("");
   try {
-    Q.ex = await createExercise(Q.track, Q.focus, review);
-    Q.ex.isReview = Boolean(review);
-    renderQuestion();
+    Q.pack = await make();
+    if (Q.mode === "review") renderQuestion();
+    else renderLearn();
   } catch (err) {
-    body().innerHTML = `<p class="error">${esc(errText(err))}</p>`;
-    foot('<button class="btn block" id="retry">Reintentar</button>');
-    $("#retry").onclick = nextExercise;
+    body().insertAdjacentHTML("beforeend", `<p class="error">${esc(errText(err))}</p>`);
+    body().querySelector(".thinking")?.remove();
+    foot('<div class="row"><button class="btn ghost" id="back">Volver</button><button class="btn" id="retry">Reintentar</button></div>');
+    $("#back").onclick = closeSession;
+    $("#retry").onclick = () => loadPack(make);
   } finally {
     Q.busy = false;
   }
 }
 
+// Paso 1: aprender
+function renderLearn() {
+  setBar(0);
+  const p = Q.pack;
+  body().innerHTML = `
+    <p class="eyebrow">${Q.lesson.unit ? `Unidad ${esc(Q.lesson.unit)} · lección ${Q.idx + 1}` : "Tema a medida"}</p>
+    <h2>${esc(Q.lesson.title)}</h2>
+    <div class="learn">${md(p.explanation)}</div>
+    ${p.phrases.length ? `<div class="card phrases"><span class="eyebrow">Escúchalas y repítelas en voz alta</span>
+      ${p.phrases.map((f) => `<div class="phrase"><button type="button" class="say big" data-say="${esc(f.en)}" aria-label="Escuchar">🔊</button><span><b>${esc(f.en)}</b><br><span class="muted">${esc(f.es)}</span></span></div>`).join("")}</div>` : ""}`;
+  foot('<button class="btn block" id="go-practice">¡Entendido! A practicar</button>');
+  $("#go-practice").onclick = () => { Q.i = 0; renderQuestion(); };
+  $(".session-body").scrollTop = 0;
+}
+
+// Paso 2: practicar
 function testList(ex) {
   return `<details><summary class="muted">Ver los ${ex.tests.length} tests que debe pasar</summary><ul class="tests">${ex.tests.map((t) => `<li>${esc(t.description)}: <code>${esc(ex.function_name)}(${esc(t.args_json.slice(1, -1))})</code> → <code>${esc(t.expected_json)}</code></li>`).join("")}</ul></details>`;
 }
@@ -896,36 +1161,45 @@ const answerValue = () => {
   return $("#answer")?.value ?? "";
 };
 function renderQuestion() {
+  Q.ex = Q.pack.exercises[Q.i];
+  setBar();
+  body().classList.remove("graded");
   const ex = Q.ex;
   const hasTests = ex.tests.length > 0;
   const isHtml = ex.kind === "html";
   const isCode = hasTests || isHtml || ex.kind === "code" || ex.kind === "fix_bug";
-  const input = hasTests || isHtml
-    ? `<textarea id="answer" class="code-editor" rows="${Math.max(7, ex.starter_code.split("\n").length + 2)}" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(ex.starter_code)}</textarea>`
+  const codeArea = `<textarea id="answer" class="code-editor" rows="${Math.max(6, ex.starter_code.split("\n").length + 2)}" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(ex.starter_code)}</textarea>`;
+  const input = isCode
+    ? codeArea
     : ex.options.length
       ? `<div class="options">${ex.options.map((o, i) => `<label><input type="radio" name="opt" value="${i}"><span class="opt-key">${i + 1}</span><span>${esc(o)}</span></label>`).join("")}</div>`
-      : `<textarea id="answer" rows="${isCode || ex.kind === "write" ? 6 : 3}" ${isCode ? 'class="code-editor" spellcheck="false" autocapitalize="off" autocorrect="off"' : ""} placeholder="Escribe tu respuesta"></textarea>`;
+      : `<input type="text" id="answer" autocomplete="off" autocapitalize="off" placeholder="${ex.kind === "fill_blank" ? "Lo que va en el hueco" : "Escribe tu respuesta"}">`;
   body().innerHTML = `
-    <div class="row">${ex.isReview ? '<span class="chip flame">Repaso</span>' : '<span class="chip accent">Nuevo</span>'}<span class="chip">${esc(ex.skill)}</span></div>
-    ${ex.lesson ? `<div class="lesson"><span class="eyebrow">Primero, lo que necesitas saber</span>${md(ex.lesson)}</div>` : ""}
+    <div class="row"><span class="chip ${Q.mode === "review" ? "flame" : "accent"}">${Q.mode === "review" ? "Repaso" : `Ejercicio ${Q.i + 1} de ${total()}`}</span>${Q.mode === "review" ? `<span class="chip">${esc(ex.skill)}</span>` : ""}</div>
     <p class="question">${esc(ex.instructions)}</p>
-    ${ex.content ? md(ex.content) : ""}
+    ${ex.listen ? `<button type="button" class="listen-btn" data-say="${esc(ex.listen)}">🔊 Escuchar</button>` : ""}
+    ${ex.content ? `<div class="prompt">${md(ex.content)}</div>` : ""}
     ${hasTests ? testList(ex) : ""}
     ${isHtml && ex.checks.length ? `<details><summary class="muted">Ver lo que se va a comprobar</summary><ul class="tests">${ex.checks.map((c) => `<li>${esc(c.description)}</li>`).join("")}</ul></details>` : ""}
     ${input}
     ${isHtml ? '<div class="preview-wrap"><span class="eyebrow">Tu página</span><div id="preview" class="preview"></div></div>' : ""}
     ${hasTests ? '<button class="btn ghost" id="run">▶ Probar mi código</button><div id="run-out"></div>' : ""}
     ${isHtml && ex.checks.length ? '<button class="btn ghost" id="run-checks">▶ Comprobar mi página</button><div id="run-out"></div>' : ""}
-    <button class="link" id="hint-btn">💡 Ver una pista</button>
-    <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>`;
+    ${ex.hint ? `<button class="link" id="hint-btn">💡 Ver una pista</button><p class="muted" id="hint" hidden>${esc(ex.hint)}</p>` : ""}
+    ${Q.mode !== "review" ? '<button class="link" id="relearn">📖 Volver a ver la lección</button>' : ""}`;
   foot(`<div class="row"><button class="btn ghost" id="dunno">No lo sé</button><button class="btn" id="check" disabled>Comprobar</button></div>`);
-  const sync = () => ($("#check").disabled = !answerValue().trim());
+  const sync = () => { const c = $("#check"); if (c) c.disabled = !answerValue().trim(); };
   body().oninput = sync;
   body().onchange = sync;
   sync();
-  $("#hint-btn").onclick = () => { $("#hint").hidden = false; $("#hint-btn").hidden = true; };
+  $("#hint-btn")?.addEventListener("click", () => { $("#hint").hidden = false; $("#hint-btn").hidden = true; });
+  $("#relearn")?.addEventListener("click", showLessonAgain);
   $("#dunno").onclick = () => check(true);
   $("#check").onclick = () => check(false);
+  $("#answer")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.tagName === "INPUT" && $("#check") && !$("#check").disabled) { e.preventDefault(); check(false); }
+    if (isCode && e.key === "Tab" && !e.shiftKey) { e.preventDefault(); e.target.setRangeText("  ", e.target.selectionStart, e.target.selectionEnd, "end"); }
+  });
   if (isHtml) {
     let t;
     const paint = () => renderPage($("#preview"), $("#answer").value);
@@ -940,9 +1214,14 @@ function renderQuestion() {
       $("#run").disabled = false;
     };
   }
-  $("#answer")?.addEventListener("keydown", (e) => {
-    if (isCode && e.key === "Tab" && !e.shiftKey) { e.preventDefault(); e.target.setRangeText("  ", e.target.selectionStart, e.target.selectionEnd, "end"); }
-  });
+  if (ex.listen && Q.i >= 0) speak(ex.listen);
+  $(".session-body").scrollTop = 0;
+}
+// Repasar la explicación sin perder el ejercicio en curso.
+function showLessonAgain() {
+  body().innerHTML = `<h2>${esc(Q.lesson.title)}</h2><div class="learn">${md(Q.pack.explanation)}</div>`;
+  foot('<button class="btn block" id="back-ex">Volver al ejercicio</button>');
+  $("#back-ex").onclick = renderQuestion;
   $(".session-body").scrollTop = 0;
 }
 
@@ -952,7 +1231,7 @@ async function check(dunno) {
   if (!dunno && !answer.trim()) return;
   Q.busy = true;
   foot('<p class="thinking">Corrigiendo</p>');
-  body().querySelectorAll("textarea, input, button").forEach((el) => (el.disabled = true));
+  body().querySelectorAll("textarea, input, button:not([data-say])").forEach((el) => (el.disabled = true));
   try {
     const r = await gradeExercise(ex, answer, dunno);
     const xp = dunno ? 2 : xpFor(r.score);
@@ -962,21 +1241,25 @@ async function check(dunno) {
     save();
     const tone = r.verdict === "correcto" ? "good" : r.verdict === "casi" ? "mid" : "bad";
     const title = { correcto: "¡Correcto!", casi: "¡Casi!", incorrecto: dunno ? "Vamos a verlo" : "No del todo" }[r.verdict];
-    const short = dunno ? "Aquí arriba tienes cómo se resuelve, paso a paso." : str(r.g?.tip) || str(r.g?.mistake_summary);
+    const short = r.verdict === "correcto" ? "" : r.local ? `Respuesta correcta: ${ex.reference_answer}` : str(r.g?.tip) || str(r.g?.mistake_summary);
     const isCode = ex.tests.length || ex.kind === "code" || ex.kind === "fix_bug" || ex.kind === "html";
+    const showRef = !r.local && ex.reference_answer;
     body().insertAdjacentHTML("beforeend", `<div class="card" id="explain" ${r.verdict === "correcto" && !r.testRun && !r.checkRun ? "hidden" : ""}>
       ${r.testRun ? testRunHTML(r.testRun, ex.function_name) : ""}
       ${r.checkRun ? checkRunHTML(r.checkRun) : ""}
       ${md(str(r.g?.feedback))}
-      <details ${dunno ? "open" : ""}><summary>Respuesta correcta</summary>${isCode ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>
-      <p class="muted">Lo repasarás ${r.sk.intervalDays === 0 ? "pronto" : whenText(r.sk.dueAt)}.</p></div>`);
+      ${showRef ? `<details ${dunno ? "open" : ""}><summary>Respuesta correcta</summary>${isCode ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>` : ""}</div>`);
+    if (ex.options.length) body().querySelectorAll(".options label").forEach((l, i) => {
+      if (ex.options[i] === ex.reference_answer) l.classList.add("right");
+      else if (l.querySelector("input").checked) l.classList.add("wrong");
+    });
+    body().classList.add("graded");
     foot(`<div class="verdict">${title} <span class="xp-pop">+${xp}</span></div>
       ${short ? `<p>${esc(short)}</p>` : ""}
       <div class="row">${$("#explain").hidden ? '<button class="btn ghost" id="why">Ver explicación</button>' : ""}<button class="btn" id="continue">Continuar</button></div>`, tone);
     $("#why")?.addEventListener("click", () => { $("#explain").hidden = false; $("#why").remove(); scrollToExplain(); });
-    body().classList.add("graded");
-    if (r.verdict !== "correcto" || r.testRun || r.checkRun) scrollToExplain();
-    $("#continue").onclick = () => { Q.i++; Q.i >= LESSON_LEN ? finishSession() : nextExercise(); };
+    if (!$("#explain").hidden) scrollToExplain();
+    $("#continue").onclick = () => { Q.i++; Q.i >= total() ? finishSession() : renderQuestion(); };
     $("#continue").focus({ preventScroll: true });
   } catch (err) {
     body().querySelectorAll("textarea, input, button").forEach((el) => (el.disabled = false));
@@ -986,30 +1269,175 @@ async function check(dunno) {
     Q.busy = false;
   }
 }
-
 function scrollToExplain() {
   const box = $(".session-body"), el = $("#explain");
   const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top - 12;
   box.scrollBy({ top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
+
+// Paso 3: resultado de la lección
 function finishSession() {
-  setBar();
+  setBar(1);
   body().classList.remove("graded");
-  const st = streak();
+  const n = total(), st = streak();
+  const passed = Q.correct >= Math.ceil(n * 0.6);
+  let title, text, buttons;
+  if (Q.mode === "lesson" && passed) {
+    course(Q.track).done[slug(Q.lesson.title)] = todayKey();
+    addXP(10);
+    const nextIdx = currentIndex(Q.track), next = curriculum(Q.track).lessons[nextIdx];
+    title = "¡Lección completada!";
+    text = next ? `Siguiente: <b>${esc(next.title)}</b>` : "¡Has terminado el curso entero! 🎉";
+    buttons = `<button class="btn ghost" id="done">Volver</button>${next ? '<button class="btn" id="next-lesson">Siguiente lección</button>' : ""}`;
+  } else if (Q.mode === "lesson") {
+    title = "¡Buen intento!";
+    text = `Necesitas ${Math.ceil(n * 0.6)} aciertos para pasar a la siguiente. Repítela: la segunda vez sale mucho mejor.`;
+    buttons = '<button class="btn ghost" id="done">Volver</button><button class="btn" id="again">Repetir lección</button>';
+  } else {
+    title = Q.mode === "review" ? "¡Repaso hecho!" : "¡Práctica hecha!";
+    text = "Lo que fallaste volverá en tus repasos hasta que lo domines.";
+    buttons = '<button class="btn block" id="done">Volver</button>';
+  }
+  save();
   body().innerHTML = `<div class="view finish">
-    <div class="trophy">${Q.correct >= 4 ? "🏆" : Q.correct >= 2 ? "⭐" : "💪"}</div>
-    <h2>${Q.correct >= 4 ? "¡Lección superada!" : Q.correct >= 2 ? "¡Buen trabajo!" : "¡Lección completada!"}</h2>
-    <p class="muted">${Q.correct >= 4 ? "Lo estás dominando." : "Lo que fallaste volverá en tus repasos hasta que lo domines."}</p>
+    <div class="trophy">${passed ? "🏆" : "💪"}</div>
+    <h2>${title}</h2>
+    <p class="muted">${text}</p>
     <div class="finish-stats">
-      <div class="stat"><span class="muted">Puntos</span><b>+${Q.xp}</b></div>
-      <div class="stat"><span class="muted">Aciertos</span><b>${Q.correct}/${LESSON_LEN}</b></div>
+      <div class="stat"><span class="muted">Puntos</span><b>+${Q.xp + (Q.mode === "lesson" && passed ? 10 : 0)}</b></div>
+      <div class="stat"><span class="muted">Aciertos</span><b>${Q.correct}/${n}</b></div>
       <div class="stat"><span class="muted">Racha</span><b>🔥${st}</b></div>
     </div></div>`;
-  foot('<div class="row"><button class="btn ghost" id="done">Volver</button><button class="btn" id="again">Otra lección</button></div>');
+  foot(`<div class="row">${buttons}</div>`);
   $("#done").onclick = closeSession;
-  $("#again").onclick = () => startSession(Q.track, Q.focus);
+  $("#again")?.addEventListener("click", () => startLesson(Q.track, Q.idx));
+  $("#next-lesson")?.addEventListener("click", () => startLesson(Q.track, currentIndex(Q.track)));
 }
 
+// ================= Generar la lección (explicación + 5 ejercicios) con una sola llamada =================
+const PROG_LEVEL = {
+  "desde cero": "Nunca ha programado: explica como a alguien que no sabe nada, sin jerga sin explicar.",
+  principiante: "Sabe lo básico de programar.",
+  intermedio: "Se maneja programando.",
+  avanzado: "Programa con soltura.",
+};
+const langName = (l) => (l === "Web" ? "desarrollo web (HTML, CSS y JavaScript)" : l);
+function packPrompt({ track, mode, lesson, idx, cur, skills, runtime }) {
+  const english = track === "english";
+  const lang = S.profile.programmingLanguage;
+  const subject = english ? "inglés para hablar con nativos" : langName(lang);
+  const prev = cur && idx > 0 ? cur.lessons.slice(Math.max(0, idx - 8), idx).map((l) => l.title).join(", ") : "";
+  const what = mode === "review"
+    ? `Prepara un REPASO de ${subject}: 5 ejercicios sobre estas habilidades que el alumno YA aprendió y le toca repasar:
+${skills.map((s) => `- "${s.name}" (dominio ${s.mastery}/100; errores recientes: ${s.mistakes.join(" | ") || "ninguno"})`).join("\n")}
+Reparte los ejercicios entre ellas y pon en "skill" el nombre EXACTO de la habilidad. Si tuvo errores, ataca ese punto. "explanation": "" y "key_phrases": [].`
+    : `Prepara la lección «${lesson.title}» del curso de ${subject}${lesson.unit ? ` (unidad ${lesson.unit})` : ""}.
+Objetivo de la lección: ${lesson.goal}
+${prev ? `Ya vio antes: ${prev}. Puedes usar eso, pero NADA de lecciones posteriores.` : "Es de las primeras lecciones: no des nada por sabido."}`;
+  const levelLine = english ? `Nivel declarado: ${S.profile.englishLevel}.` : `${PROG_LEVEL[S.profile.programmingLevel] ?? ""}`;
+  const ex4 = english
+    ? `traducir una frase corta del español al inglés (kind "translate"); pon en accepted_answers las variantes válidas (con y sin contracciones).`
+    : `kind "predict_output" (qué muestra un código de 1-3 líneas, con 3 opciones) o completar UNA línea de código (fill_blank).`;
+  const ex5 = english
+    ? `kind "write": una frase propia usando lo aprendido (reference_answer = un ejemplo de respuesta).`
+    : runtime === "web"
+      ? `kind "html" si la lección es de HTML o CSS (escribir 1-4 líneas), o "code" si es de JavaScript.`
+      : `kind "code": escribir 1-4 líneas usando lo aprendido.`;
+  const htmlRules = runtime === "web" ? `
+Ejercicios kind "html": el alumno escribe HTML (con <style> si hay CSS) y ve su página. starter_code = punto de partida (puede estar vacío);
+reference_answer = SOLO el HTML de la solución; checks = 2-4 comprobaciones {"description", "selector" (selector CSS), "type": "exists|count|text|attr|style", "value"}
+(exists: ""; count: mínimo "3"; text: texto que debe contener; attr: "href" o "alt=gato"; style: "color: red"). Deben pasar con tu solución y aceptar
+soluciones razonables. Las imágenes externas no cargan: comprueba el alt.` : "";
+  const codeRules = runtime ? `
+Si un ejercicio pide escribir una FUNCIÓN de JavaScript, dale tests reales: function_name, starter_code con la firma, tests = 2-4 casos
+{"description", "args_json": "array JSON de argumentos", "expected_json": "valor JSON"}, reference_answer = solo el código. En otro caso tests [].` : "";
+  return `${TUTOR}
+
+${what}
+
+<learner>
+${learnerContext(track)}
+</learner>
+${levelLine}
+
+${mode === "review" ? "" : `1) "explanation": la lección en markdown, en español, de 8-15 líneas: explica la idea con palabras sencillas (una comparación con la vida diaria si ayuda)
+y da 2-4 ejemplos ${english ? "en inglés con su traducción" : "de código cortos y comentados"}. Todo lo que pidan los ejercicios debe estar explicado aquí.
+${english ? '"key_phrases": 3-6 frases clave de la lección {"en": "...", "es": "..."} (se podrán escuchar).' : '"key_phrases": [].'}
+`}
+2) "exercises": EXACTAMENTE 5 ejercicios, de más fácil a más difícil, SOLO sobre ${mode === "review" ? "esas habilidades" : "lo explicado"}:
+- 1 y 2: reconocer. kind "multiple_choice" con 3 opciones${english ? ' (o kind "listen": el alumno OYE la frase de "listen" y elige qué significa; no la escribas en content)' : ""}.
+  reference_answer = el texto EXACTO de la opción correcta.
+- 3: kind "fill_blank": UNA frase con UN solo hueco "___"; reference_answer = solo lo que va en el hueco; accepted_answers = otras respuestas válidas.
+- 4: ${ex4}
+- 5: ${ex5}
+UNA sola pregunta por ejercicio: nunca varios huecos ni varias frases a la vez. Instrucciones cortas en español.
+"explain": 1-2 frases que explican por qué la respuesta correcta lo es (se muestra si falla). "hint": una pista que no regale la respuesta.
+${htmlRules}${codeRules}
+
+Responde SOLO con un objeto JSON:
+{"explanation": "...", "key_phrases": [{"en": "", "es": ""}],
+ "exercises": [{"skill": "", "kind": "multiple_choice|listen|fill_blank|translate|write|predict_output|code|html", "instructions": "",
+   "content": "enunciado en markdown", "listen": "", "options": [], "reference_answer": "", "accepted_answers": [], "hint": "", "explain": "",
+   "function_name": "", "starter_code": "", "tests": [], "checks": []}]}`;
+}
+function cleanExercise(x) {
+  return {
+    skill: str(x?.skill), kind: str(x?.kind), instructions: str(x?.instructions), content: str(x?.content), listen: str(x?.listen).trim(),
+    options: arr(x?.options).map(str).filter(Boolean), hint: str(x?.hint), explain: str(x?.explain),
+    reference_answer: str(x?.reference_answer), accepted: arr(x?.accepted_answers).map(str).filter(Boolean),
+    function_name: str(x?.function_name), starter_code: str(x?.starter_code),
+    tests: arr(x?.tests).map((t) => ({ description: str(t?.description), args_json: str(t?.args_json), expected_json: str(t?.expected_json) })),
+    checks: arr(x?.checks).map((c) => ({ description: str(c?.description), selector: str(c?.selector).trim(), type: str(c?.type), value: str(c?.value) }))
+      .filter((c) => c.selector && CHECK_TYPES.includes(c.type)),
+  };
+}
+const normAns = (t) => words(t).join(" ");
+// Deja cada ejercicio en un estado fiable: opciones con la respuesta dentro, tests y comprobaciones que pasan con la solución.
+async function validateExercise(ex, runtime) {
+  if (ex.kind !== "listen") ex.listen = "";
+  else if (!ex.listen) ex.kind = "multiple_choice";
+  else if (!canSpeak) { ex.content = [ex.content, `«${ex.listen}»`].filter(Boolean).join("\n\n"); ex.listen = ""; }
+  if (ex.options.length) {
+    const hit = ex.options.find((o) => normAns(o) === normAns(ex.reference_answer)) ?? ex.options.find((o) => o.trim() === ex.reference_answer.trim());
+    if (hit) ex.reference_answer = hit;
+    else ex.options = []; // sin opción correcta clara: que lo corrija la IA
+  }
+  if (ex.kind === "html") {
+    ex.tests = [];
+    if (runtime !== "web") { ex.checks = []; return; }
+    ex.reference_answer = stripFences(ex.reference_answer);
+    const run = runChecks(ex.reference_answer, ex.checks);
+    ex.checks = ex.checks.filter((c, i) => run.results[i].passed);
+    return;
+  }
+  ex.checks = [];
+  if (!runtime || !ex.tests.length || !validName(ex.function_name)) { ex.tests = []; return; }
+  ex.reference_answer = stripFences(ex.reference_answer);
+  const tests = ex.tests.filter((t) => parsesJSON(t.expected_json) && parsesJSON(t.args_json) && Array.isArray(JSON.parse(t.args_json)));
+  const run = await runTests(ex.reference_answer, ex.function_name, tests);
+  const good = run.results.filter((r) => r.passed).map(({ description, args_json, expected_json }) => ({ description, args_json, expected_json }));
+  ex.tests = good.length >= 2 ? good : [];
+}
+async function createPack({ track, mode, lesson, idx, cur, skills }) {
+  const lang = S.profile.programmingLanguage;
+  const runtime = track !== "programming" ? null : lang === "Web" ? "web" : lang === "JavaScript" ? "js" : null;
+  const raw = await askJSON(packPrompt({ track, mode, lesson, idx, cur, skills, runtime }), { cache: false });
+  const exercises = arr(raw?.exercises).map(cleanExercise).filter((e) => e.instructions || e.content).slice(0, 6);
+  if (exercises.length < 3 || (mode !== "review" && !str(raw?.explanation).trim())) throw { code: "invalid_json" };
+  const names = (skills ?? []).map((s) => s.name);
+  for (const [i, ex] of exercises.entries()) {
+    await validateExercise(ex, runtime);
+    ex.track = track;
+    ex.skill = mode === "review" ? (names.includes(ex.skill) ? ex.skill : names[i % names.length]) : lesson.title;
+  }
+  return {
+    explanation: str(raw?.explanation),
+    phrases: arr(raw?.key_phrases).map((p) => ({ en: str(p?.en), es: str(p?.es) })).filter((p) => p.en).slice(0, 6),
+    exercises,
+  };
+}
+
+// ================= Corrección =================
 const GRADE_PROMPT = (ex, answer, dunno, testRun) => `${TUTOR}
 
 Corrige la respuesta del alumno. Sé justo: acepta respuestas equivalentes a la de referencia (otra traducción válida, otro código que funcione).
@@ -1033,8 +1461,24 @@ Responde SOLO con un objeto JSON:
  "mistake_summary": "el error concreto en una línea (vacío si no hubo)",
  "other_weak_skills": ["otras habilidades donde falló, nombres cortos en español"], "tip": "un consejo práctico"}`;
 
+// Las opciones y las respuestas cortas exactas se corrigen al momento, sin llamar a la IA.
+function localGrade(ex, answer) {
+  if (ex.tests.length || ex.checks.length || ex.kind === "html" || ex.kind === "code" || ex.kind === "write") return null;
+  const a = normAns(answer);
+  if (!a) return null;
+  const accepted = [ex.reference_answer, ...ex.accepted].map(normAns).filter(Boolean);
+  if (accepted.includes(a)) return 100;
+  return ex.options.length ? 0 : null;
+}
 // Corrige un ejercicio, lo registra en el progreso y devuelve el resultado.
 async function gradeExercise(ex, answer, dunno) {
+  const quick = dunno ? (ex.explain && (ex.options.length || ex.kind === "fill_blank") ? 0 : null) : localGrade(ex, answer);
+  if (quick !== null) {
+    const ok = quick === 100;
+    const g = { feedback: ok ? ex.explain : `La respuesta correcta es **${ex.reference_answer}**.${ex.explain ? `\n\n${ex.explain}` : ""}`, tip: "", mistake_summary: ok ? "" : dunno ? "No sabía la respuesta" : `Respondió «${answer}» en vez de «${ex.reference_answer}»` };
+    recordAttempt({ track: ex.track, skill: ex.skill, score: quick, mistake: g.mistake_summary });
+    return { g, score: quick, verdict: ok ? "correcto" : "incorrecto", local: true, testRun: null, checkRun: null, sk: S.skills[skillKey(ex.track, ex.skill)] };
+  }
   const checkRun = ex.checks?.length && !dunno ? runChecks(answer, ex.checks) : null;
   const testRun = checkRun ?? (ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null);
   const g = await askJSON(GRADE_PROMPT(ex, answer, dunno, testRun), { cache: false });
@@ -1048,138 +1492,11 @@ async function gradeExercise(ex, answer, dunno) {
   }
   if (dunno) { score = 0; verdict = "incorrecto"; }
   recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
-  return { g, score, verdict, testRun: checkRun ? null : testRun, checkRun, sk: S.skills[skillKey(ex.track, ex.skill)] };
+  return { g, score, verdict, local: false, testRun: checkRun ? null : testRun, checkRun, sk: S.skills[skillKey(ex.track, ex.skill)] };
 }
 function whenText(iso) {
   const d = Math.round((new Date(iso) - Date.now()) / DAY);
   return d <= 0 ? "hoy" : d === 1 ? "mañana" : d < 60 ? `en ${d} días` : `en ${Math.round(d / 30)} meses`;
-}
-
-// ================= Practicar =================
-const P = { track: "english", exercise: null };
-function pickReview(track) {
-  const due = dueSkills(track);
-  const last = [...S.history].reverse().find((h) => h.track === track)?.skill;
-  return due.find((s) => s.name !== last) ?? due[0] ?? null;
-}
-const PROG_LEVEL = {
-  "desde cero": `NUNCA HA PROGRAMADO. Una sola idea por ejercicio. La lesson la explica desde cero, con una comparación de la vida diaria y un ejemplo corto comentado.
-El ejercicio es muy fácil (difficulty 1): multiple_choice, predict_output ("¿qué muestra este código?"), fill_blank (completar UNA palabra o línea)
-o, en HTML/CSS, kind "html" escribiendo 1-3 líneas. Nada de pedir escribir una función entera.`,
-  principiante: "Sabe lo básico (variables, if, bucles sencillos). Ejercicios cortos; si pides código, como mucho 3-6 líneas. La lesson incluye un ejemplo resuelto parecido.",
-  intermedio: "Se maneja con funciones, arrays y objetos. Puede escribir funciones de 5-15 líneas.",
-  avanzado: "Programa con soltura: algoritmos, estructuras de datos, asincronía, buenas prácticas.",
-};
-const PATHS = {
-  Web: `Camino de desarrollo web, en este orden: HTML (qué es una etiqueta, títulos h1-h6, párrafos, negrita y cursiva, listas, enlaces, imágenes,
-botones, estructura de una página) → CSS (qué es una regla, color, fondo, tamaño de letra, fuentes, márgenes y relleno, bordes, clases, flexbox) →
-JavaScript (console.log, variables, números y texto, if/else, bucles, arrays, funciones y al final cambiar la página con document.querySelector y eventos).
-Mira su progreso: no pases al siguiente bloque hasta que domine lo básico del anterior.`,
-  JavaScript: "Camino: qué es un programa y console.log, valores y variables, números y texto, comparaciones, if/else, bucles, arrays, funciones, objetos.",
-};
-const langName = (l) => (l === "Web" ? "desarrollo web (HTML, CSS y JavaScript)" : l);
-const lessonNeeded = (track) => (track === "programming" ? ["desde cero", "principiante"].includes(S.profile.programmingLevel) : ["A1", "A2"].includes(S.profile.englishLevel));
-function exercisePrompt({ track, focus, review, runtime, retryReason }) {
-  const topic = track === "english"
-    ? "inglés para hablar con nativos: prioriza el inglés real (phrasal verbs, expresiones, contracciones, registro coloquial vs. formal, cómo reaccionar en una conversación) frente al inglés de libro, con frases de situaciones reales"
-    : `programación en ${langName(S.profile.programmingLanguage)}. ${PATHS[S.profile.programmingLanguage] ?? ""}
-Nivel del alumno: ${PROG_LEVEL[S.profile.programmingLevel] ?? PROG_LEVEL.principiante}`;
-  let selection;
-  if (focus) selection = `El alumno pidió practicar: ${focus}`;
-  else if (review) selection = `Es un REPASO programado (repetición espaciada) de la habilidad "${review.name}" (dominio ${review.mastery}/100).
-Errores recientes: ${review.mistakes.length ? review.mistakes.join(" | ") : "ninguno"}.
-Usa exactamente "${review.name}" como skill. Si tuvo errores, ataca ese punto desde otro ángulo; si la domina, sube un poco la dificultad.`;
-  else selection = "No hay repasos pendientes: introduce la siguiente habilidad que le toca aprender según su nivel y lo que ya domina. Sin historial, empieza por lo primero de su nivel (no le hagas un examen).";
-  const codeRules = runtime && S.profile.programmingLevel === "desde cero"
-    ? `Si haces un fill_blank de código, puedes darle tests reales: starter_code es una función CASI COMPLETA con una sola línea por completar
-marcada con el comentario // ← completa esta línea; function_name es esa función; tests: 2-4 casos (args_json = string con array JSON de argumentos,
-expected_json = string con el valor JSON); reference_answer = la función completa, solo código. En otro caso, function_name y starter_code vacíos y tests [].`
-    : runtime
-    ? `El código del alumno se EJECUTA con tests reales en JavaScript. Si eliges kind "code" o "fix_bug" (más o menos la mitad de las veces):
-- Pide escribir (o arreglar) UNA función pura llamada function_name que DEVUELVE un valor JSON (números, strings, booleanos, null, arrays, objetos).
-- starter_code: la firma con cuerpo vacío ("code") o el código completo con el bug ("fix_bug").
-- tests: 3-6 casos con normal y bordes. args_json es SIEMPRE un string con un array JSON de argumentos; expected_json, un string con el valor JSON esperado.
-- reference_answer: SOLO el código completo de la solución, sin markdown. Se comprueba ejecutándolo contra tus tests.
-Para cualquier otro kind deja function_name y starter_code vacíos y tests como [].`
-    : "Deja function_name y starter_code vacíos y tests como [].";
-  const htmlRules = runtime === "web"
-    ? `Para HTML y CSS usa kind "html": el alumno escribe HTML (con una etiqueta <style> si hay CSS) y ve su página en una vista previa.
-- starter_code: el punto de partida (vacío, o con parte hecha si solo debe completar algo).
-- reference_answer: SOLO el código HTML completo de la solución, sin markdown.
-- checks: 2-5 comprobaciones automáticas, cada una {"description": "qué se comprueba, en español", "selector": "selector CSS (h1, ul li, .titulo, button)",
-  "type": "exists|count|text|attr|style", "value": "..."}. exists: value "". count: el mínimo de elementos ("3"). text: texto que debe contener.
-  attr: "href" o "alt=gato". style: "propiedad: valor" ("color: red", "font-size: 32px", "background-color: yellow").
-  Deben pasar con tu reference_answer y aceptar soluciones razonables distintas: no exijas textos exactos que el enunciado no pida.
-- Las imágenes externas no cargan en la vista previa: en <img> comprueba el atributo alt, no la foto.
-Las reglas de JavaScript de abajo son solo para cuando le toque JavaScript.`
-    : "";
-  return `${TUTOR}
-
-Crea UN ejercicio de ${topic}. Debe poder responderse en 1-5 minutos. Varía el tipo.
-${lessonNeeded(track) || !review
-    ? `Incluye "lesson": una mini-lección ANTES del ejercicio (3-8 líneas en markdown) que enseñe exactamente lo que el ejercicio pide, con un ejemplo resuelto.
-El alumno debe poder resolver el ejercicio solo con esa lección. No adelantes la respuesta exacta.`
-    : 'Deja "lesson" vacío ("") salvo que haga falta recordar algo.'}
-
-<learner>
-${learnerContext(track)}
-</learner>
-
-${selection}
-
-${htmlRules}
-${codeRules}
-${retryReason ? `\nUn intento anterior se descartó: ${retryReason}. Asegúrate de que la solución pasa todos los tests.` : ""}
-
-Responde SOLO con un objeto JSON con estas claves:
-{"lesson": "mini-lección en markdown o vacío", "skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept|html",
- "difficulty": 1-5, "instructions": "instrucción breve en español", "content": "enunciado (markdown permitido)",
- "options": ["solo si es multiple_choice, si no []"], "hint": "pista", "reference_answer": "respuesta correcta o solución modelo",
- "why_this_exercise": "una frase al alumno de por qué este ejercicio", "function_name": "", "starter_code": "",
- "tests": [{"description": "qué comprueba", "args_json": "[1, 2]", "expected_json": "3"}],
- "checks": [{"description": "hay un título principal", "selector": "h1", "type": "exists", "value": ""}]}`;
-}
-function cleanExercise(x) {
-  return {
-    skill: str(x?.skill) || "General", kind: str(x?.kind), difficulty: clamp(x?.difficulty, 1, 5),
-    instructions: str(x?.instructions), content: str(x?.content), options: arr(x?.options).map(str).filter(Boolean),
-    lesson: str(x?.lesson), hint: str(x?.hint), reference_answer: str(x?.reference_answer), why: str(x?.why_this_exercise),
-    function_name: str(x?.function_name), starter_code: str(x?.starter_code),
-    tests: arr(x?.tests).map((t) => ({ description: str(t?.description), args_json: str(t?.args_json), expected_json: str(t?.expected_json) })),
-    checks: arr(x?.checks).map((c) => ({ description: str(c?.description), selector: str(c?.selector).trim(), type: str(c?.type), value: str(c?.value) }))
-      .filter((c) => c.selector && CHECK_TYPES.includes(c.type)),
-  };
-}
-async function createExercise(track, focus, review) {
-  const lang = S.profile.programmingLanguage;
-  const runtime = track !== "programming" ? null : lang === "Web" ? "web" : lang === "JavaScript" ? "js" : null;
-  let retryReason, ex;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    ex = cleanExercise(await askJSON(exercisePrompt({ track, focus, review, runtime, retryReason }), { cache: false }));
-    if (!ex.instructions && !ex.content) throw { code: "invalid_json" };
-    if (review) ex.skill = review.name;
-    if (ex.kind === "html") {
-      if (runtime !== "web") return { ...ex, tests: [], checks: [], track };
-      ex.reference_answer = stripFences(ex.reference_answer);
-      const run = runChecks(ex.reference_answer, ex.checks);
-      const good = ex.checks.filter((c, i) => run.results[i].passed);
-      if (good.length >= 2) return { ...ex, tests: [], checks: good, track };
-      const f = run.results.find((r) => !r.passed);
-      retryReason = `tus comprobaciones no pasan con tu propia solución (p. ej. "${f?.description}": ${f?.detail})`;
-      if (attempt === 1) return { ...ex, tests: [], checks: [], track };
-      continue;
-    }
-    if (!runtime || !ex.tests.length) return { ...ex, tests: [], checks: [], track };
-    ex.reference_answer = stripFences(ex.reference_answer);
-    if (!validName(ex.function_name)) { retryReason = "nombre de función no válido"; continue; }
-    const tests = ex.tests.filter((t) => parsesJSON(t.expected_json) && parsesJSON(t.args_json) && Array.isArray(JSON.parse(t.args_json)));
-    const run = await runTests(ex.reference_answer, ex.function_name, tests);
-    const good = run.results.filter((r) => r.passed).map(({ description, args_json, expected_json }) => ({ description, args_json, expected_json }));
-    if (good.length >= 2) return { ...ex, tests: good, checks: [], track };
-    const f = run.results.find((r) => !r.passed);
-    retryReason = run.error ?? `la solución no pasa sus tests (p. ej. "${f?.description}": dio ${f?.actual ?? f?.error}, se esperaba ${f?.expected_json})`;
-  }
-  return { ...ex, tests: [], checks: [], track }; // sin tests fiables: lo corrige solo la IA
 }
 
 // ================= Voz =================
@@ -1555,6 +1872,7 @@ function renderProfile() {
 $("#profile-form").addEventListener("submit", (e) => {
   e.preventDefault();
   Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500), levelChosen: { english: true, programming: true }, dailyGoal: Number($("#p-goal").value) || 50 });
+  for (const t of TRACKS) if (doneCount(t) === 0) course(t).start = curriculum(t).start[levelOf(t)] ?? 0;
   renderHome();
   save();
   $("#p-saved").hidden = false;
