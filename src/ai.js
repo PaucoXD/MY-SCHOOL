@@ -49,12 +49,32 @@ const EXERCISE_SCHEMA = {
     hint: { type: "string" },
     reference_answer: { type: "string", description: "Respuesta correcta o modelo de solución (oculta al alumno)." },
     why_this_exercise: { type: "string", description: "Una frase al alumno explicando por qué se eligió este ejercicio según su progreso." },
+    function_name: { type: "string", description: "Solo ejercicios con tests: nombre de la función que debe escribir el alumno. Vacío si no hay tests." },
+    starter_code: { type: "string", description: "Solo ejercicios con tests: código inicial (firma de la función, o el código con el bug en fix_bug). Vacío si no hay tests." },
+    tests: {
+      type: "array",
+      description: "Solo ejercicios con tests: 3-6 casos. Vacío si no hay tests.",
+      items: {
+        type: "object",
+        properties: {
+          description: { type: "string", description: "Qué comprueba, en español (p. ej. 'lista vacía')." },
+          args_json: { type: "string", description: "Array JSON con los argumentos de la llamada, p. ej. '[[1, 2, 3], 2]'." },
+          expected_json: { type: "string", description: "Valor JSON que debe devolver, p. ej. '6' o '\"hola\"' o '[1, 2]'." },
+        },
+        required: ["description", "args_json", "expected_json"],
+        additionalProperties: false,
+      },
+    },
   },
-  required: ["skill", "kind", "difficulty", "instructions", "content", "options", "hint", "reference_answer", "why_this_exercise"],
+  required: ["skill", "kind", "difficulty", "instructions", "content", "options", "hint", "reference_answer", "why_this_exercise", "function_name", "starter_code", "tests"],
   additionalProperties: false,
 };
 
-export function generateExercise({ track, context, focus, review }) {
+const RUNTIME_LABEL = { javascript: "JavaScript", python: "Python" };
+
+// `runtime` ("javascript" | "python" | null) indica si el código del alumno se puede ejecutar con tests.
+// `retryReason` explica por qué se descartó un intento anterior (tests incorrectos).
+export function generateExercise({ track, context, focus, review, runtime, retryReason }) {
   const topic = track === "english"
     ? "inglés (gramática, vocabulario, traducción, comprensión, escritura)"
     : "programación (en el lenguaje del perfil: lógica, sintaxis, estructuras de datos, depuración, conceptos)";
@@ -83,7 +103,18 @@ ${context}
 
 ${selection}
 
-Varía el tipo de ejercicio. Debe poder responderse en 1-5 minutos.`,
+Varía el tipo de ejercicio. Debe poder responderse en 1-5 minutos.
+${runtime ? `
+El código del alumno se EJECUTA con tests reales en ${RUNTIME_LABEL[runtime]}. Si eliges kind "code" o "fix_bug"
+(hazlo en más o menos la mitad de los ejercicios de programación):
+- Pide escribir (o arreglar) UNA función pura llamada function_name que recibe argumentos y DEVUELVE un valor
+  (no que lo imprima). Los argumentos y el resultado deben ser JSON: números, strings, booleanos, null, listas, objetos/dicts.
+- starter_code: la firma de la función con un cuerpo vacío para "code", o el código completo con el bug para "fix_bug".
+- tests: 3-6 casos que cubran el caso normal y los bordes (vacío, cero, negativos...). args_json es SIEMPRE un array con
+  los argumentos en orden. Calcula cada expected_json con cuidado: se comprueban ejecutando tu reference_answer.
+- reference_answer: SOLO el código completo de la solución en ${RUNTIME_LABEL[runtime]}, sin explicaciones ni markdown.
+Para cualquier otro kind, deja function_name, starter_code y tests vacíos.` : "Deja function_name, starter_code y tests vacíos."}
+${retryReason ? `\nUn intento anterior se descartó: ${retryReason}. Asegúrate de que la solución pasa todos los tests.` : ""}`,
   });
 }
 
@@ -101,7 +132,7 @@ const GRADE_SCHEMA = {
   additionalProperties: false,
 };
 
-export function gradeAnswer({ exercise, answer, context }) {
+export function gradeAnswer({ exercise, answer, context, testRun }) {
   return structured({
     system: TUTOR_SYSTEM,
     effort: "medium",
@@ -119,7 +150,14 @@ ${JSON.stringify(exercise, null, 2)}
 
 <student_answer>
 ${answer}
-</student_answer>`,
+</student_answer>
+${testRun ? `
+Se ejecutó el código del alumno con los tests: pasó ${testRun.passed} de ${testRun.total}.
+${testRun.error ? `Error general: ${testRun.error}\n` : ""}<test_results>
+${JSON.stringify(testRun.results.map(({ description, args_json, expected_json, passed, actual, error }) => ({ description, args_json, expected_json, passed, actual, error })), null, 2)}
+</test_results>
+Los resultados de los tests son la verdad: no digas que funciona si algún test falla. Si fallan, explica por qué
+con el caso concreto. Si pasan todos, valora además la claridad y la calidad del código.` : ""}`,
   });
 }
 

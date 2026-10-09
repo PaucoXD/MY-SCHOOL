@@ -8,6 +8,11 @@ detecta qué te falla y adapta los ejercicios a tus puntos débiles.
 - **Practicar**: la IA genera un ejercicio cada vez (opción múltiple, traducción, rellenar huecos, escribir código,
   predecir la salida, arreglar un bug...). *Siguiente ejercicio* empieza por tus repasos pendientes y, cuando no quedan,
   te enseña algo nuevo. *Aprender algo nuevo* salta los repasos. También puedes pedir un tema concreto.
+- **Código con tests reales** (JavaScript y Python): en los ejercicios de escribir o arreglar código, la IA genera
+  tests que se ejecutan de verdad. Puedes pulsar *Ejecutar tests* (o Ctrl+Enter) las veces que quieras antes de enviar.
+  Al enviar, los tests mandan: si alguno falla no apruebas aunque la IA opine otra cosa, y si pasan todos apruebas
+  como mínimo. Antes de enseñarte el ejercicio, el servidor ejecuta la solución de la IA y descarta los tests que
+  esa solución no pasa (si quedan menos de 2, regenera el ejercicio).
 - **Corrección con IA**: puntuación de 0 a 100, explicación del error, consejo y respuesta de referencia. Acepta respuestas
   equivalentes (otra traducción válida, otro código que funcione).
 - **Mi progreso**: dominio (0-100) por habilidad, aciertos, y los últimos errores concretos de cada una.
@@ -51,15 +56,27 @@ npm start              # abre http://localhost:3000
 src/server.js     API Express (ejercicios, respuestas, progreso, análisis, chat)
 src/ai.js         Llamadas a Claude con salidas JSON estructuradas
 src/progress.js   Cálculo del dominio por habilidad y almacenamiento
+src/runner.js     Ejecución del código con tests (JavaScript y Python) en un proceso aparte
 public/           Interfaz web (HTML, CSS y JS sin build)
-test/             Tests de la lógica de progreso
+test/             Tests del progreso y del ejecutor de código
 ```
 
 Usa el modelo `claude-opus-5-5` por defecto (cámbialo con `CLAUDE_MODEL`). Tiene activado el *fallback* del servidor:
 si un modelo rechaza una petición, la API la reintenta automáticamente con otro.
 
+### Sobre la ejecución de código
+
+El código se ejecuta en tu ordenador, en un proceso aparte con límite de tiempo (6 s) y de memoria:
+
+- **JavaScript** corre con el modelo de permisos de Node: no puede escribir archivos, lanzar programas ni leer
+  fuera de su carpeta temporal.
+- **Python** necesita `python3` instalado. Tiene límites de CPU y memoria, pero puede acceder a tus archivos.
+
+Para una app local con tu propio código es suficiente. **No publiques el servidor en internet** sin antes meter la
+ejecución en un sandbox de verdad (un contenedor, por ejemplo).
+
 ## Ideas para seguir
 
-- Ejecutar el código del alumno en un sandbox para comprobarlo con tests reales.
+- Más lenguajes con tests (TypeScript, Java...) y ejecución en contenedor para poder publicar la app.
 - Práctica oral de inglés (voz a texto) y lecturas con preguntas de comprensión.
 - Varios usuarios con login y base de datos.

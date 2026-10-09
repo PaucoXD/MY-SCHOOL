@@ -125,7 +125,10 @@ $("#new-exercise").addEventListener("submit", async (e) => {
 function renderExercise(ex) {
   const box = $("#exercise");
   box.classList.remove("hidden");
-  const answerInput = ex.options.length
+  const hasTests = ex.tests.length > 0;
+  const answerInput = hasTests
+    ? `<textarea id="answer" class="code-editor" rows="${Math.max(8, ex.starter_code.split("\n").length + 4)}" spellcheck="false">${escapeHtml(ex.starter_code)}</textarea>`
+    : ex.options.length
     ? `<div class="options">${ex.options
         .map((o) => `<label><input type="radio" name="answer" value="${escapeHtml(o)}">${md(o).replace(/^<p>|<\/p>$/g, "")}</label>`)
         .join("")}</div>`
@@ -135,16 +138,78 @@ function renderExercise(ex) {
     <p class="muted">${escapeHtml(ex.why_this_exercise)}</p>
     <h3>${escapeHtml(ex.instructions)}</h3>
     <div>${md(ex.content)}</div>
+    ${hasTests ? renderTestList(ex) : ""}
     <form id="answer-form">
       ${answerInput}
       <div class="row">
-        <button type="submit">Comprobar</button>
+        ${hasTests ? `<button type="button" id="run-tests" class="secondary">▶ Ejecutar tests</button>` : ""}
+        <button type="submit">${hasTests ? "Enviar solución" : "Comprobar"}</button>
         <button type="button" id="show-hint" class="secondary">Pista</button>
       </div>
       <p id="hint" class="muted hidden">💡 ${escapeHtml(ex.hint)}</p>
-    </form>`;
+    </form>
+    <div id="run-output"></div>`;
+  if (hasTests) {
+    $("#run-tests").addEventListener("click", runCode);
+    $("#answer").addEventListener("keydown", editorKeys);
+  }
   $("#show-hint").addEventListener("click", () => $("#hint").classList.remove("hidden"));
   $("#answer-form").addEventListener("submit", submitAnswer);
+}
+
+const RUNTIME_LABEL = { javascript: "JavaScript", python: "Python" };
+
+function renderTestList(ex) {
+  return `
+    <details class="tests" open>
+      <summary>Tests (${ex.tests.length}) · se ejecutan de verdad en ${RUNTIME_LABEL[ex.runtime]}</summary>
+      <ul>${ex.tests
+        .map((t) => `<li>${escapeHtml(t.description)}: <code>${escapeHtml(ex.function_name)}(${escapeHtml(t.args_json.slice(1, -1))})</code> → <code>${escapeHtml(t.expected_json)}</code></li>`)
+        .join("")}</ul>
+    </details>`;
+}
+
+function renderTestRun(run, fnName) {
+  const all = !run.error && run.passed === run.total;
+  return `
+    <div class="test-run ${all ? "ok" : "fail"}">
+      <strong>${all ? "✅" : "❌"} ${run.passed}/${run.total} tests pasados</strong>
+      ${run.error ? `<pre class="error">${escapeHtml(run.error)}</pre>` : ""}
+      <ul>${run.results
+        .map(
+          (r) => `<li>${r.passed ? "✅" : "❌"} ${escapeHtml(r.description)} — <code>${escapeHtml(fnName)}(${escapeHtml(r.args_json.slice(1, -1))})</code>
+            ${r.passed ? "" : `<br><span class="muted">esperado <code>${escapeHtml(r.expected_json)}</code>, ${
+              r.error ? `error: <code>${escapeHtml(r.error)}</code>` : `obtenido <code>${escapeHtml(r.actual ?? "")}</code>`
+            }</span>`}</li>`,
+        )
+        .join("")}</ul>
+      ${run.logs.length ? `<details><summary>Salida de consola (${run.logs.length} líneas)</summary><pre>${escapeHtml(run.logs.join("\n"))}</pre></details>` : ""}
+    </div>`;
+}
+
+async function runCode(e) {
+  const btn = e.currentTarget;
+  busy(btn, true, "Ejecutando…");
+  try {
+    const run = await api("/api/run", { method: "POST", body: { id: state.exercise.id, code: $("#answer").value } });
+    $("#run-output").innerHTML = renderTestRun(run, state.exercise.function_name);
+  } catch (err) {
+    showError("#run-output", err);
+  } finally {
+    busy(btn, false);
+  }
+}
+
+// Tab inserta 4 espacios y Ctrl/Cmd+Enter ejecuta los tests.
+function editorKeys(e) {
+  const ta = e.currentTarget;
+  if (e.key === "Tab" && !e.shiftKey) {
+    e.preventDefault();
+    ta.setRangeText("    ", ta.selectionStart, ta.selectionEnd, "end");
+  } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    $("#run-tests").click();
+  }
 }
 
 async function submitAnswer(e) {
@@ -161,15 +226,19 @@ async function submitAnswer(e) {
     box.classList.remove("hidden");
     box.innerHTML = `
       <h3 class="verdict-${r.verdict}">${{ correcto: "✅ ¡Correcto!", casi: "🟡 Casi", incorrecto: "❌ Incorrecto" }[r.verdict]} — ${r.score}/100</h3>
+      ${r.testRun ? renderTestRun(r.testRun, state.exercise.function_name) : ""}
       <div>${md(r.feedback)}</div>
       ${r.tip ? `<p><strong>Consejo:</strong> ${escapeHtml(r.tip)}</p>` : ""}
-      <details><summary>Respuesta de referencia</summary>${md(r.reference_answer)}</details>
+      <details><summary>Respuesta de referencia</summary>${
+        state.exercise.runtime ? `<pre><code>${escapeHtml(r.reference_answer)}</code></pre>` : md(r.reference_answer)
+      }</details>
       <p class="muted">🔁 Próximo repaso de <strong>${escapeHtml(r.skill)}</strong>: ${
         r.nextReview.intervalDays === 0 ? "en tu próxima sesión (hay que reforzarlo)" : whenText(r.nextReview.dueAt)
       }.</p>
       <div class="row"><button id="next">Siguiente ejercicio</button></div>`;
     $("#next").addEventListener("click", () => $("#new-exercise").requestSubmit($("#new-exercise button")));
     btn.closest(".row").remove();
+    $("#run-output").innerHTML = "";
     refreshDueBanner();
   } catch (err) {
     showError("#result", err);
