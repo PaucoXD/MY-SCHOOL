@@ -1,0 +1,1149 @@
+<title>MY-SCHOOL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: app de una columna; barra de pestañas abajo en el móvil, arriba en pantallas anchas. */
+:root {
+  --bg: #eef2f1;
+  --surface: #ffffff;
+  --sunk: #e3e9e7;
+  --ink: #14211f;
+  --muted: #586764;
+  --line: #cfd9d6;
+  --accent: #0b6e63;
+  --accent-ink: #ffffff;
+  --accent-soft: #d3ebe6;
+  --spark: #c2410c;
+  --good: #15803d;
+  --mid: #b45309;
+  --bad: #c2262b;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 14px;
+  --tabbar: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1716; --surface: #172220; --sunk: #1f2c2a; --ink: #e4eeeb; --muted: #97a8a4; --line: #2c3c39;
+    --accent: #3fbfaf; --accent-ink: #062320; --accent-soft: #163c37; --spark: #fb8a4a;
+    --good: #4ade80; --mid: #fbbf24; --bad: #f87171; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1716; --surface: #172220; --sunk: #1f2c2a; --ink: #e4eeeb; --muted: #97a8a4; --line: #2c3c39;
+  --accent: #3fbfaf; --accent-ink: #062320; --accent-soft: #163c37; --spark: #fb8a4a;
+  --good: #4ade80; --mid: #fbbf24; --bad: #f87171; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font: 17px/1.55 var(--f-body); }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3, h4 { font-family: var(--f-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.5rem; font-weight: 800; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+code, pre, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--sunk); padding: 1px 5px; border-radius: 5px; }
+pre { background: var(--sunk); padding: 12px; border-radius: 10px; overflow-x: auto; margin: 0; }
+pre code { background: none; padding: 0; }
+:focus-visible { outline: 3px solid var(--spark); outline-offset: 2px; }
+
+.app { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 12px calc(var(--tabbar) + 24px); display: flex; flex-direction: column; gap: 16px; }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
+.brand h1 span { color: var(--accent); }
+.save-state { font-size: 0.8rem; color: var(--muted); }
+
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(5, 1fr);
+  background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+nav.tabs button { border: 0; background: none; padding: 8px 2px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 0.72rem; color: var(--muted); cursor: pointer; min-height: var(--tabbar); }
+nav.tabs button svg { width: 22px; height: 22px; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 700; }
+@media (min-width: 760px) {
+  nav.tabs { position: static; border: 1px solid var(--line); border-radius: 999px; padding: 4px; display: flex; gap: 2px; }
+  nav.tabs button { flex-direction: row; min-height: 0; padding: 7px 14px; font-size: 0.9rem; border-radius: 999px; gap: 6px; }
+  nav.tabs button svg { width: 17px; height: 17px; }
+  nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+  .app { padding-block: 16px 32px; }
+}
+
+.view { display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.eyebrow { font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.grow { flex: 1 1 200px; min-width: 0; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 9px 16px; cursor: pointer; font-weight: 700; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; }
+.btn.small { padding: 4px 10px; font-size: 0.85rem; }
+.btn:disabled { opacity: 0.55; cursor: progress; }
+input[type=text], textarea, select { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+textarea { resize: vertical; }
+label.field { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 0.92rem; }
+label.field span.muted { font-weight: 400; }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); font-weight: 700; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.chip { display: inline-block; font-size: 0.78rem; padding: 2px 9px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.chip.accent { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.notice { border-left: 4px solid var(--spark); background: var(--surface); padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 0.92rem; }
+.error { color: var(--bad); }
+.thinking { color: var(--muted); font-style: italic; }
+.thinking::after { content: "…"; animation: dots 1.2s steps(3) infinite; }
+@keyframes dots { 0% { content: ""; } 33% { content: "."; } 66% { content: ".."; } }
+
+.options { display: flex; flex-direction: column; gap: 6px; }
+.options label { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.options label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.code-editor { font-family: var(--f-mono); font-size: 0.88rem; white-space: pre; tab-size: 2; background: var(--sunk); }
+.verdict { font-family: var(--f-display); font-size: 1.3rem; font-weight: 800; }
+.v-correcto { color: var(--good); } .v-casi { color: var(--mid); } .v-incorrecto { color: var(--bad); }
+.tests { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
+.test-run { border: 1px solid var(--line); border-left: 4px solid var(--bad); border-radius: 0 10px 10px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.test-run.ok { border-left-color: var(--good); }
+.md p + p, .md ul, .md ol, .md pre { margin-top: 8px; }
+.md ul, .md ol { padding-left: 20px; margin-bottom: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.stat b { display: block; font-family: var(--f-display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.skill { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.skill:last-child { border-bottom: 0; }
+.skill-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.meter { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 99px; }
+.skill ul { margin: 2px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.88rem; }
+
+.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.scenario { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.scenario:hover { border-color: var(--accent); }
+.scenario b { font-family: var(--f-display); font-weight: 600; }
+.scenario span { color: var(--muted); font-size: 0.86rem; }
+.log { display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 88%; padding: 10px 14px; border-radius: 16px; display: flex; flex-direction: column; gap: 6px; }
+.bubble.them { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; align-self: flex-start; }
+.bubble.me { background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; align-self: flex-end; }
+.bubble .tr { color: var(--muted); font-size: 0.88rem; }
+.blur { filter: blur(6px); cursor: pointer; user-select: none; }
+.tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.tools button, .say { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 2px 9px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+.fb { align-self: flex-end; max-width: 88%; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 8px 12px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
+.fb.ok { border-style: solid; color: var(--good); }
+.fb b { color: var(--spark); }
+.composer { position: sticky; bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding-block: 8px; display: flex; gap: 8px; align-items: center; }
+@media (min-width: 760px) { .composer { bottom: 0; } }
+.composer input { flex: 1; min-width: 0; }
+.mic { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--accent); background: var(--accent-soft); cursor: pointer; flex: none; font-size: 1.2rem; }
+.mic.on { background: var(--bad); border-color: var(--bad); }
+.scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.words span { display: inline-block; margin: 2px 4px 2px 0; padding: 1px 7px; border-radius: 6px; }
+.words .ok { background: var(--accent-soft); }
+.words .miss { color: var(--bad); text-decoration: underline wavy var(--bad); }
+.chatlog { display: flex; flex-direction: column; gap: 8px; }
+.chatlog .bubble.them { max-width: 100%; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; content: "…"; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>MY<span>·</span>SCHOOL</h1><span class="save-state" id="save-state">Guardando en este navegador</span></div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-view="practice" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 7h6M8 11h8"/></svg>Practicar</button>
+      <button role="tab" data-view="talk" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v10H9l-5 4z"/></svg>Conversar</button>
+      <button role="tab" data-view="progress" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progreso</button>
+      <button role="tab" data-view="tutor" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Tutor</button>
+      <button role="tab" data-view="profile" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Perfil</button>
+    </nav>
+  </header>
+
+  <p class="notice" id="no-claude" hidden>Esta página necesita abrirse en claude.ai con tu cuenta para que la IA funcione. Tu progreso se ve igualmente.</p>
+
+  <!-- PRACTICAR -->
+  <section class="view" id="view-practice">
+    <div class="row">
+      <div class="seg" role="group" aria-label="Materia">
+        <button data-track="english" aria-pressed="true">Inglés</button>
+        <button data-track="programming" aria-pressed="false">Programación</button>
+      </div>
+    </div>
+    <p class="muted" id="due-banner"></p>
+    <form class="row" id="new-ex">
+      <input type="text" id="focus" class="grow" placeholder="Opcional: un tema concreto (p. ej. phrasal verbs, arrays)">
+      <button class="btn" type="submit" value="auto">Siguiente ejercicio</button>
+      <button class="btn ghost" type="submit" value="new">Algo nuevo</button>
+    </form>
+    <div class="card" id="exercise">
+      <span class="eyebrow">Cómo funciona</span>
+      <h3>La IA elige cada ejercicio según lo que te falla</h3>
+      <p class="muted">Primero repasas lo que toca (repetición espaciada) y después aprendes cosas nuevas. Cada corrección actualiza tu dominio de esa habilidad.</p>
+      <p class="muted">Ejemplo de ejercicio de inglés: <em>«Di de forma natural: "¿Te importa si me siento aquí?"»</em>, con respuesta modelo <code>Mind if I sit here?</code></p>
+    </div>
+    <div class="card" id="result" hidden></div>
+  </section>
+
+  <!-- CONVERSAR -->
+  <section class="view" id="view-talk" hidden>
+    <div id="talk-setup" class="view">
+      <div>
+        <h2>Habla con un nativo</h2>
+        <p class="muted">Elige una situación. El nativo te responde en voz alta y bajo cada frase tuya ves cómo lo diría él.</p>
+      </div>
+      <div class="scenarios" id="scenarios"></div>
+      <div class="card">
+        <div class="row">
+          <label class="field grow">Acento
+            <select id="accent"><option value="us">Americano</option><option value="uk">Británico</option><option value="au">Australiano</option></select>
+          </label>
+          <label class="field grow">Velocidad de la voz
+            <select id="rate"><option value="0.85">Más lenta</option><option value="1" selected>Normal</option><option value="1.12">Rápida</option></select>
+          </label>
+        </div>
+        <label class="row"><input type="checkbox" id="listen-mode"> Modo escucha: ocultar el texto del nativo hasta que lo toques</label>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Libreta</span>
+        <h3>Frases de nativo</h3>
+        <p class="muted" id="phrase-status">Las expresiones útiles de tus conversaciones se guardan aquí para repasarlas.</p>
+        <div class="row"><button class="btn" id="phrase-start" hidden>Repasar frases</button></div>
+        <div id="phrase-card" class="view"></div>
+      </div>
+    </div>
+
+    <div id="talk-session" class="view" hidden>
+      <div class="row" style="justify-content: space-between; align-items: flex-start">
+        <div class="grow"><h3 id="talk-title"></h3><p class="muted" id="talk-goal"></p></div>
+        <div class="row"><button class="btn ghost" id="talk-exit">Salir</button><button class="btn" id="talk-end">Terminar y evaluar</button></div>
+      </div>
+      <p class="notice" id="goal-done" hidden>¡Objetivo conseguido! Puedes seguir hablando o terminar para ver tu evaluación.</p>
+      <div class="log" id="talk-log"></div>
+      <div class="row" id="suggestions" hidden></div>
+      <form class="composer" id="talk-form">
+        <button type="button" class="mic" id="mic" title="Hablar" aria-label="Hablar">🎤</button>
+        <input type="text" id="talk-text" placeholder="Escribe o dicta en inglés…" autocomplete="off">
+        <button class="btn" type="submit">Enviar</button>
+        <button class="btn ghost" type="button" id="help" title="Ideas de qué decir">💡</button>
+      </form>
+      <p class="muted" id="talk-status">Consejo: en el móvil, toca el 🎤 del teclado para dictar en inglés.</p>
+    </div>
+
+    <div id="talk-summary" class="view" hidden></div>
+  </section>
+
+  <!-- PROGRESO -->
+  <section class="view" id="view-progress" hidden>
+    <div class="seg" role="group" aria-label="Materia">
+      <button data-ptrack="english" aria-pressed="true">Inglés</button>
+      <button data-ptrack="programming" aria-pressed="false">Programación</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="row" style="justify-content: space-between">
+        <h3>Habilidades</h3>
+        <button class="btn small" id="analyze">Analizar mis errores</button>
+      </div>
+      <div id="skills"></div>
+    </div>
+    <div class="card" id="insights" hidden></div>
+  </section>
+
+  <!-- TUTOR -->
+  <section class="view" id="view-tutor" hidden>
+    <div>
+      <h2>Tu tutor</h2>
+      <p class="muted">Pregúntale lo que quieras. Ve tu progreso y tus errores recientes.</p>
+    </div>
+    <div class="chatlog" id="chat-log">
+      <div class="bubble them"><p>Hola. Puedo explicarte por qué fallas algo, darte ejemplos o prepararte para una situación real. Prueba: <em>«¿Cuándo uso present perfect y cuándo past simple?»</em></p></div>
+    </div>
+    <form class="composer" id="chat-form">
+      <input type="text" id="chat-text" placeholder="Escribe tu pregunta…" autocomplete="off">
+      <button class="btn" type="submit">Enviar</button>
+    </form>
+  </section>
+
+  <!-- PERFIL -->
+  <section class="view" id="view-profile" hidden>
+    <form class="card" id="profile-form">
+      <h3>Tu perfil</h3>
+      <label class="field">Nivel de inglés
+        <select name="englishLevel" id="p-level"><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+      </label>
+      <label class="field">Lenguaje de programación
+        <select name="programmingLanguage" id="p-lang"><option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>TypeScript</option><option>SQL</option></select>
+        <span class="muted">En JavaScript tu código se ejecuta con tests reales; en los demás lo corrige la IA.</span>
+      </label>
+      <label class="field">Nivel de programación
+        <select name="programmingLevel" id="p-plevel"><option>principiante</option><option>intermedio</option><option>avanzado</option></select>
+      </label>
+      <label class="field">Objetivos
+        <textarea name="goals" id="p-goals" rows="3" placeholder="Ej: hablar con nativos en el trabajo, conseguir mi primer empleo como desarrollador…"></textarea>
+      </label>
+      <div class="row"><button class="btn" type="submit">Guardar</button><span class="muted" id="p-saved" hidden>Guardado</span></div>
+    </form>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const clamp = (n, a, b) => Math.max(a, Math.min(b, Math.round(Number(n) || 0)));
+const str = (v) => (typeof v === "string" ? v : v == null ? "" : String(v));
+const arr = (v) => (Array.isArray(v) ? v : []);
+
+function md(text) {
+  const blocks = [];
+  let s = esc(text).replace(/```[\w+-]*\n?([\s\S]*?)```/g, (_, code) => {
+    blocks.push(`<pre><code>${code.replace(/\n$/, "")}</code></pre>`);
+    return `\u0000${blocks.length - 1}\u0000`;
+  });
+  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  const html = s.split(/\n{2,}/).map((para) => {
+    const lines = para.split("\n");
+    if (lines.every((l) => /^\s*([-*]|\d+\.)\s+/.test(l))) {
+      const tag = /^\s*\d+\./.test(lines[0]) ? "ol" : "ul";
+      return `<${tag}>${lines.map((l) => `<li>${l.replace(/^\s*([-*]|\d+\.)\s+/, "")}</li>`).join("")}</${tag}>`;
+    }
+    if (/^\u0000\d+\u0000$/.test(para.trim())) return para.trim();
+    return `<p>${lines.join("<br>")}</p>`;
+  }).join("");
+  return `<div class="md">${html.replace(/\u0000(\d+)\u0000/g, (_, i) => blocks[i])}</div>`;
+}
+
+// ================= Progreso (dominio, repetición espaciada, libreta) =================
+const TRACKS = ["english", "programming"];
+const DAY = 86400000, PASS = 70, ALPHA = 0.35;
+function emptyState() {
+  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "principiante", goals: "" }, skills: {}, history: [], phrases: [] };
+}
+let S = emptyState();
+const slug = (t) => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const skillKey = (track, skill) => `${track}:${slug(skill)}`;
+
+function schedule(s, score, now = new Date()) {
+  let ease = s.ease ?? 2.5, interval = s.intervalDays ?? 0, streak = s.streak ?? 0;
+  if (score >= PASS) {
+    streak += 1;
+    ease = Math.max(1.3, ease + (score >= 85 ? 0.1 : -0.15));
+    if (streak === 1) interval = 1;
+    else if (streak === 2) interval = score >= 85 ? 3 : 2;
+    else interval = Math.round(interval * (score >= 85 ? ease : 1.2));
+    interval = Math.min(180, Math.max(1, interval));
+  } else {
+    streak = 0; ease = Math.max(1.3, ease - 0.2); interval = 0; s.lapses = (s.lapses ?? 0) + 1;
+  }
+  s.ease = Math.round(ease * 100) / 100; s.intervalDays = interval; s.streak = streak;
+  s.dueAt = new Date(now.getTime() + interval * DAY).toISOString();
+}
+const isDue = (s, now = new Date()) => !s.dueAt || new Date(s.dueAt) <= now;
+
+function recordAttempt({ track, skill, score, mistake, errorSkills = [] }) {
+  const now = new Date();
+  const touched = [{ skill, score, mistake }];
+  for (const extra of errorSkills) if (slug(extra) && slug(extra) !== slug(skill)) touched.push({ skill: extra, score: Math.min(score, 40), mistake });
+  for (const t of touched) {
+    const key = skillKey(track, t.skill);
+    const s = S.skills[key] ?? { track, name: t.skill, attempts: 0, correct: 0, mastery: null, mistakes: [], lastSeen: null };
+    s.attempts += 1;
+    if (t.score >= PASS) s.correct += 1;
+    s.mastery = s.mastery === null ? t.score : Math.round(s.mastery * (1 - ALPHA) + t.score * ALPHA);
+    s.lastSeen = now.toISOString();
+    if (t.score < PASS && t.mistake) s.mistakes = [t.mistake, ...s.mistakes].slice(0, 5);
+    schedule(s, t.score, now);
+    S.skills[key] = s;
+  }
+  S.history.push({ date: now.toISOString(), track, skill, score });
+  S.history = S.history.slice(-200);
+}
+const skillsFor = (track) => Object.values(S.skills).filter((s) => s.track === track);
+const dueSkills = (track) => skillsFor(track).filter((s) => isDue(s)).sort((a, b) => a.mastery - b.mastery);
+function summary(track) {
+  const sk = skillsFor(track);
+  const hist = S.history.filter((h) => h.track === track);
+  const avg = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null);
+  return {
+    track, skillsPracticed: sk.length, totalAttempts: hist.length,
+    averageMastery: avg(sk.map((s) => s.mastery)), recentAverageScore: avg(hist.slice(-20).map((h) => h.score)),
+    dueForReview: dueSkills(track).map((s) => s.name),
+    weakest: [...sk].sort((a, b) => a.mastery - b.mastery).slice(0, 5).map(({ name, mastery, attempts, mistakes }) => ({ name, mastery, attempts, mistakes })),
+    strongest: [...sk].sort((a, b) => b.mastery - a.mastery).slice(0, 3).map(({ name, mastery }) => ({ name, mastery })),
+  };
+}
+const learnerContext = (track) => JSON.stringify({ profile: S.profile, progress: (track ? [track] : TRACKS).map(summary) });
+
+const CONTRACTIONS = { "i'm": "i am", "you're": "you are", "we're": "we are", "they're": "they are", "he's": "he is", "she's": "she is", "it's": "it is", "that's": "that is", "what's": "what is", "there's": "there is", "i've": "i have", "you've": "you have", "we've": "we have", "i'll": "i will", "you'll": "you will", "we'll": "we will", "it'll": "it will", "i'd": "i would", "you'd": "you would", "don't": "do not", "doesn't": "does not", "didn't": "did not", "can't": "can not", "cannot": "can not", "won't": "will not", "isn't": "is not", "aren't": "are not", "wasn't": "was not", "haven't": "have not", "wouldn't": "would not", "couldn't": "could not", "shouldn't": "should not", "let's": "let us", gonna: "going to", wanna: "want to", gotta: "got to", im: "i am", youre: "you are", thats: "that is", whats: "what is", ive: "i have", dont: "do not", doesnt: "does not", didnt: "did not", cant: "can not", isnt: "is not" };
+const words = (t) => String(t).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9' ]+/g, " ").split(/\s+/).filter(Boolean).flatMap((w) => (CONTRACTIONS[w] ?? w.replace(/^'+|'+$/g, "")).split(" ")).filter(Boolean);
+function comparePhrase(expected, answer) {
+  const a = words(expected), b = words(answer);
+  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const out = [];
+  for (let i = 0, j = 0; i < a.length;) {
+    if (j < b.length && a[i] === b[j]) { out.push({ w: a[i], ok: true }); i++; j++; }
+    else if (j < b.length && dp[i][j + 1] >= dp[i + 1][j]) j++;
+    else { out.push({ w: a[i], ok: false }); i++; }
+  }
+  const total = a.length + b.length;
+  return { score: total ? Math.round((200 * dp[0][0]) / total) : 0, words: out };
+}
+function addPhrases(list, scenario) {
+  const known = new Set(S.phrases.map((p) => words(p.phrase).join(" ")));
+  let added = 0;
+  for (const p of list) {
+    const norm = words(p.phrase).join(" ");
+    if (!norm || known.has(norm)) continue;
+    known.add(norm);
+    S.phrases.push({ id: Date.now().toString(36) + "-" + S.phrases.length, phrase: str(p.phrase), meaning_es: str(p.meaning_es), when_to_use_es: str(p.when_to_use_es), scenario, dueAt: new Date().toISOString(), intervalDays: 0 });
+    added++;
+  }
+  S.phrases = S.phrases.slice(-400);
+  return added;
+}
+const duePhrases = () => S.phrases.filter((p) => isDue(p)).sort((a, b) => String(a.dueAt).localeCompare(String(b.dueAt)));
+
+// ================= Guardado: tu cuenta (db) o, si no, este navegador =================
+const LOCAL_KEY = "my-school-state";
+const store = { ref: null, writing: false, again: false, timer: null };
+function normalize(data) {
+  const base = emptyState();
+  if (!data || typeof data !== "object") return base;
+  return { profile: { ...base.profile, ...(data.profile ?? {}) }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases) };
+}
+function loadLocal() { try { const raw = localStorage.getItem(LOCAL_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+function save() {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(S)); } catch {}
+  if (!store.ref) return;
+  clearTimeout(store.timer);
+  store.timer = setTimeout(flush, 600);
+}
+async function flush() {
+  if (store.writing) { store.again = true; return; }
+  store.writing = true;
+  setSaveState("Guardando…");
+  try {
+    await store.ref.set(JSON.parse(JSON.stringify(S)));
+    setSaveState("Guardado en tu cuenta");
+  } catch (e) {
+    setSaveState("No se pudo guardar en tu cuenta; queda en este navegador");
+  } finally {
+    store.writing = false;
+    if (store.again) { store.again = false; flush(); }
+  }
+}
+const setSaveState = (t) => ($("#save-state").textContent = t);
+async function initStore() {
+  S = normalize(loadLocal());
+  renderAll();
+  if (!window.claude?.use) return;
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const uid = db && user ? await user.id() : null;
+    if (!uid) return;
+    store.ref = db.doc(`data/users/${uid}/state`);
+    const snap = await store.ref.get();
+    if (snap.exists) {
+      S = normalize(snap.data());
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(S)); } catch {}
+      setSaveState("Guardado en tu cuenta");
+      renderAll();
+    } else if (S.history.length || S.phrases.length) {
+      flush();
+    } else {
+      setSaveState("Se guardará en tu cuenta");
+    }
+  } catch {
+    store.ref = null;
+  }
+}
+
+// ================= Claude =================
+const samplerP = window.claude?.use ? window.claude.use("sample") : Promise.resolve(null);
+samplerP.then((s) => { if (!s) $("#no-claude").hidden = false; });
+const ERRORS = {
+  not_granted: "No has permitido que esta página use Claude. Recarga la página y acepta el permiso.",
+  sampling_disabled: "Claude no está disponible para tu cuenta.",
+  rate_limited: "Has hecho muchas peticiones seguidas o llegaste a tu límite de uso. Espera un poco y vuelve a intentarlo.",
+  session_expired: "Tu sesión de claude.ai caducó. Vuelve a iniciar sesión.",
+  invalid_json: "La respuesta de la IA llegó incompleta. Pulsa otra vez.",
+  refused: "La IA no quiso responder a esto. Prueba con otra cosa.",
+  unavailable: "Abre esta página en claude.ai con tu cuenta para usar la IA.",
+};
+const errText = (e) => ERRORS[e?.code] ?? "Algo falló al hablar con la IA. Vuelve a intentarlo.";
+async function askJSON(prompt, opts = {}) {
+  const s = await samplerP;
+  if (!s) throw { code: "unavailable" };
+  return s.json(prompt, opts);
+}
+async function ask(input, opts = {}) {
+  const s = await samplerP;
+  if (!s) throw { code: "unavailable" };
+  return s(input, opts);
+}
+const TUTOR = `Eres el tutor personal de MY-SCHOOL, una app para aprender inglés (para poder hablar con nativos) y programación.
+El alumno habla español: explica en español y usa inglés en ejemplos y ejercicios de inglés.
+Personaliza con su perfil y progreso (habilidades con dominio 0-100 y errores recientes): refuerza lo que falla,
+no repitas lo que domina y sube la dificultad poco a poco. Sé claro, concreto y motivador.`;
+
+// ================= Ejecutar JavaScript con tests (Web Worker aislado) =================
+const validName = (n) => /^[A-Za-z_$][\w$]*$/.test(n);
+function runTests(code, fnName, tests) {
+  return new Promise((resolve) => {
+    const src = `
+const __logs = [];
+const __show = (v) => { try { return typeof v === "string" ? v : JSON.stringify(v); } catch { return String(v); } };
+console.log = console.info = console.warn = console.error = (...a) => { if (__logs.length < 100) __logs.push(a.map(__show).join(" ").slice(0, 500)); };
+const __fn = (function () {
+${code.replace(/^\s*export\s+(default\s+)?/gm, "")}
+;return typeof ${fnName} !== "undefined" ? ${fnName} : undefined;
+})();
+const __norm = (v) => { if (v === undefined) return null; try { return JSON.parse(JSON.stringify(v)); } catch { return String(v); } };
+const __eq = (a, b) => {
+  if (typeof a === "number" && typeof b === "number") return a === b || Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((x, i) => __eq(x, b[i]));
+  if (a && b && typeof a === "object" && typeof b === "object") { const ka = Object.keys(a), kb = Object.keys(b); return ka.length === kb.length && ka.every((k) => Object.hasOwn(b, k) && __eq(a[k], b[k])); }
+  return a === b;
+};
+const __fmt = (e) => (e && e.name ? e.name + ": " + e.message : String(e));
+self.onmessage = async (ev) => {
+  if (typeof __fn !== "function") { postMessage({ error: "No encuentro la función ${fnName}. ¿Le cambiaste el nombre?", results: [], logs: __logs }); return; }
+  const results = [];
+  for (const t of ev.data) {
+    try {
+      const v = __norm(await __fn(...JSON.parse(t.args_json)));
+      results.push({ passed: __eq(v, JSON.parse(t.expected_json)), actual: __show(v) });
+    } catch (e) { results.push({ passed: false, error: __fmt(e) }); }
+  }
+  postMessage({ results, logs: __logs });
+};`;
+    const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    let worker;
+    const finish = (out) => {
+      clearTimeout(timer);
+      worker?.terminate();
+      URL.revokeObjectURL(url);
+      const results = tests.map((t, i) => ({ ...t, ...(out.results?.[i] ?? { passed: false, error: out.error ? "No se ejecutó" : "Sin resultado" }) }));
+      resolve({ error: out.error ?? null, logs: out.logs ?? [], results, passed: results.filter((r) => r.passed).length, total: results.length });
+    };
+    const timer = setTimeout(() => finish({ error: "Tiempo agotado: tu código tardó demasiado (¿un bucle infinito?)." }), 4000);
+    try {
+      worker = new Worker(url);
+      worker.onmessage = (e) => finish(e.data);
+      worker.onerror = (e) => { e.preventDefault?.(); finish({ error: str(e.message).replace(/^Uncaught\s+/, "") || "Error al cargar tu código." }); };
+      worker.postMessage(tests);
+    } catch (e) {
+      finish({ error: "Este navegador no deja ejecutar código aquí." });
+    }
+  });
+}
+const stripFences = (c) => { const m = /^\s*```[\w+-]*\n([\s\S]*?)\n?```\s*$/.exec(c); return m ? m[1] : c; };
+const parsesJSON = (t) => { try { JSON.parse(t); return true; } catch { return false; } };
+
+// ================= Practicar =================
+const P = { track: "english", exercise: null };
+function pickReview(track) {
+  const due = dueSkills(track);
+  const last = [...S.history].reverse().find((h) => h.track === track)?.skill;
+  return due.find((s) => s.name !== last) ?? due[0] ?? null;
+}
+function exercisePrompt({ track, focus, review, runtime, retryReason }) {
+  const topic = track === "english"
+    ? "inglés para hablar con nativos: prioriza el inglés real (phrasal verbs, expresiones, contracciones, registro coloquial vs. formal, cómo reaccionar en una conversación) frente al inglés de libro, con frases de situaciones reales"
+    : `programación en ${S.profile.programmingLanguage} (lógica, sintaxis, estructuras de datos, depuración, conceptos), nivel ${S.profile.programmingLevel}`;
+  let selection;
+  if (focus) selection = `El alumno pidió practicar: ${focus}`;
+  else if (review) selection = `Es un REPASO programado (repetición espaciada) de la habilidad "${review.name}" (dominio ${review.mastery}/100).
+Errores recientes: ${review.mistakes.length ? review.mistakes.join(" | ") : "ninguno"}.
+Usa exactamente "${review.name}" como skill. Si tuvo errores, ataca ese punto desde otro ángulo; si la domina, sube un poco la dificultad.`;
+  else selection = "No hay repasos pendientes: introduce una habilidad nueva adecuada a su nivel (o el siguiente paso lógico). Sin historial, empieza por un diagnóstico de su nivel declarado.";
+  const codeRules = runtime
+    ? `El código del alumno se EJECUTA con tests reales en JavaScript. Si eliges kind "code" o "fix_bug" (más o menos la mitad de las veces):
+- Pide escribir (o arreglar) UNA función pura llamada function_name que DEVUELVE un valor JSON (números, strings, booleanos, null, arrays, objetos).
+- starter_code: la firma con cuerpo vacío ("code") o el código completo con el bug ("fix_bug").
+- tests: 3-6 casos con normal y bordes. args_json es SIEMPRE un string con un array JSON de argumentos; expected_json, un string con el valor JSON esperado.
+- reference_answer: SOLO el código completo de la solución, sin markdown. Se comprueba ejecutándolo contra tus tests.
+Para cualquier otro kind deja function_name y starter_code vacíos y tests como [].`
+    : "Deja function_name y starter_code vacíos y tests como [].";
+  return `${TUTOR}
+
+Crea UN ejercicio de ${topic}. Debe poder responderse en 1-5 minutos. Varía el tipo.
+
+<learner>
+${learnerContext(track)}
+</learner>
+
+${selection}
+
+${codeRules}
+${retryReason ? `\nUn intento anterior se descartó: ${retryReason}. Asegúrate de que la solución pasa todos los tests.` : ""}
+
+Responde SOLO con un objeto JSON con estas claves:
+{"skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept",
+ "difficulty": 1-5, "instructions": "instrucción breve en español", "content": "enunciado (markdown permitido)",
+ "options": ["solo si es multiple_choice, si no []"], "hint": "pista", "reference_answer": "respuesta correcta o solución modelo",
+ "why_this_exercise": "una frase al alumno de por qué este ejercicio", "function_name": "", "starter_code": "",
+ "tests": [{"description": "qué comprueba", "args_json": "[1, 2]", "expected_json": "3"}]}`;
+}
+function cleanExercise(x) {
+  return {
+    skill: str(x?.skill) || "General", kind: str(x?.kind), difficulty: clamp(x?.difficulty, 1, 5),
+    instructions: str(x?.instructions), content: str(x?.content), options: arr(x?.options).map(str).filter(Boolean),
+    hint: str(x?.hint), reference_answer: str(x?.reference_answer), why: str(x?.why_this_exercise),
+    function_name: str(x?.function_name), starter_code: str(x?.starter_code),
+    tests: arr(x?.tests).map((t) => ({ description: str(t?.description), args_json: str(t?.args_json), expected_json: str(t?.expected_json) })),
+  };
+}
+async function createExercise(track, focus, review) {
+  const runtime = track === "programming" && S.profile.programmingLanguage === "JavaScript";
+  let retryReason, ex;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    ex = cleanExercise(await askJSON(exercisePrompt({ track, focus, review, runtime, retryReason }), { cache: false }));
+    if (!ex.instructions && !ex.content) throw { code: "invalid_json" };
+    if (review) ex.skill = review.name;
+    if (!runtime || !ex.tests.length) return { ...ex, tests: [], track };
+    ex.reference_answer = stripFences(ex.reference_answer);
+    if (!validName(ex.function_name)) { retryReason = "nombre de función no válido"; continue; }
+    const tests = ex.tests.filter((t) => parsesJSON(t.expected_json) && parsesJSON(t.args_json) && Array.isArray(JSON.parse(t.args_json)));
+    const run = await runTests(ex.reference_answer, ex.function_name, tests);
+    const good = run.results.filter((r) => r.passed).map(({ description, args_json, expected_json }) => ({ description, args_json, expected_json }));
+    if (good.length >= 2) return { ...ex, tests: good, track };
+    const f = run.results.find((r) => !r.passed);
+    retryReason = run.error ?? `la solución no pasa sus tests (p. ej. "${f?.description}": dio ${f?.actual ?? f?.error}, se esperaba ${f?.expected_json})`;
+  }
+  return { ...ex, tests: [], track }; // sin tests fiables: lo corrige solo la IA
+}
+
+function renderDueBanner() {
+  const due = dueSkills(P.track).map((s) => s.name);
+  $("#due-banner").textContent = due.length
+    ? `Tienes ${due.length} repaso${due.length === 1 ? "" : "s"} pendiente${due.length === 1 ? "" : "s"}: ${due.slice(0, 4).join(", ")}${due.length > 4 ? "…" : ""}. «Siguiente ejercicio» empieza por ahí.`
+    : "Sin repasos pendientes: «Siguiente ejercicio» te enseña algo nuevo.";
+}
+$$("[data-track]").forEach((b) => b.addEventListener("click", () => {
+  P.track = b.dataset.track;
+  $$("[data-track]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  renderDueBanner();
+}));
+
+$("#new-ex").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btns = $$("#new-ex button");
+  btns.forEach((b) => (b.disabled = true));
+  const focus = $("#focus").value.trim().slice(0, 200);
+  const review = focus || e.submitter?.value === "new" ? null : pickReview(P.track);
+  $("#result").hidden = true;
+  $("#exercise").innerHTML = `<p class="thinking">${review ? `Preparando un repaso de «${esc(review.name)}»` : "Preparando tu ejercicio"}</p>`;
+  try {
+    P.exercise = await createExercise(P.track, focus, review);
+    P.exercise.isReview = Boolean(review);
+    renderExercise();
+  } catch (err) {
+    $("#exercise").innerHTML = `<p class="error">${esc(errText(err))}</p>`;
+  } finally {
+    btns.forEach((b) => (b.disabled = false));
+  }
+});
+
+function testList(ex) {
+  return `<details open><summary class="muted">Tests (${ex.tests.length}) · se ejecutan de verdad</summary><ul class="tests">${ex.tests.map((t) => `<li>${esc(t.description)}: <code>${esc(ex.function_name)}(${esc(t.args_json.slice(1, -1))})</code> → <code>${esc(t.expected_json)}</code></li>`).join("")}</ul></details>`;
+}
+function testRunHTML(run, fn) {
+  const ok = !run.error && run.passed === run.total;
+  return `<div class="test-run ${ok ? "ok" : ""}"><b>${ok ? "✓" : "✗"} ${run.passed}/${run.total} tests pasados</b>
+    ${run.error ? `<pre class="error">${esc(run.error)}</pre>` : ""}
+    <ul class="tests">${run.results.map((r) => `<li>${r.passed ? "✓" : "✗"} ${esc(r.description)} — <code>${esc(fn)}(${esc(r.args_json.slice(1, -1))})</code>${r.passed ? "" : `<br><span class="muted">esperado <code>${esc(r.expected_json)}</code>, ${r.error ? `error: <code>${esc(r.error)}</code>` : `obtenido <code>${esc(r.actual ?? "")}</code>`}</span>`}</li>`).join("")}</ul>
+    ${run.logs.length ? `<details><summary class="muted">Consola (${run.logs.length})</summary><pre>${esc(run.logs.join("\n"))}</pre></details>` : ""}</div>`;
+}
+function renderExercise() {
+  const ex = P.exercise;
+  const hasTests = ex.tests.length > 0;
+  const input = hasTests
+    ? `<textarea id="answer" class="code-editor" rows="${Math.max(8, ex.starter_code.split("\n").length + 3)}" spellcheck="false">${esc(ex.starter_code)}</textarea>`
+    : ex.options.length
+      ? `<div class="options">${ex.options.map((o, i) => `<label><input type="radio" name="opt" value="${i}"><span>${esc(o)}</span></label>`).join("")}</div>`
+      : `<textarea id="answer" rows="${["code", "fix_bug", "write"].includes(ex.kind) ? 8 : 3}" ${ex.kind === "code" || ex.kind === "fix_bug" ? 'class="code-editor" spellcheck="false"' : ""} placeholder="Tu respuesta"></textarea>`;
+  $("#exercise").innerHTML = `
+    <div class="row">${ex.isReview ? '<span class="chip accent">Repaso</span>' : ""}<span class="chip">${esc(ex.skill)}</span><span class="chip">Dificultad ${ex.difficulty}/5</span></div>
+    ${ex.why ? `<p class="muted">${esc(ex.why)}</p>` : ""}
+    <h3>${esc(ex.instructions)}</h3>
+    ${md(ex.content)}
+    ${hasTests ? testList(ex) : ""}
+    <form id="answer-form" class="view">
+      ${input}
+      <div class="row">
+        ${hasTests ? '<button type="button" class="btn ghost" id="run">Ejecutar tests</button>' : ""}
+        <button class="btn" type="submit">${hasTests ? "Enviar solución" : "Comprobar"}</button>
+        <button type="button" class="btn ghost" id="hint-btn">Pista</button>
+      </div>
+      <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>
+    </form>
+    <div id="run-out"></div>`;
+  $("#hint-btn").onclick = () => ($("#hint").hidden = false);
+  if (hasTests) {
+    $("#run").onclick = async () => {
+      $("#run").disabled = true;
+      $("#run-out").innerHTML = testRunHTML(await runTests($("#answer").value, ex.function_name, ex.tests), ex.function_name);
+      $("#run").disabled = false;
+    };
+    $("#answer").addEventListener("keydown", (e) => {
+      if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); e.target.setRangeText("  ", e.target.selectionStart, e.target.selectionEnd, "end"); }
+    });
+  }
+  $("#answer-form").addEventListener("submit", submitAnswer);
+}
+
+async function submitAnswer(e) {
+  e.preventDefault();
+  const ex = P.exercise;
+  const answer = ex.options.length && !ex.tests.length
+    ? ex.options[Number(document.querySelector('input[name="opt"]:checked')?.value)] : $("#answer")?.value;
+  if (!answer?.trim()) return;
+  const btn = e.submitter;
+  btn.disabled = true;
+  const res = $("#result");
+  res.hidden = false;
+  res.innerHTML = '<p class="thinking">Corrigiendo</p>';
+  try {
+    const testRun = ex.tests.length ? await runTests(answer, ex.function_name, ex.tests) : null;
+    const g = await askJSON(`${TUTOR}
+
+Corrige la respuesta del alumno. Sé justo: acepta respuestas equivalentes a la de referencia (otra traducción válida, otro código que funcione).
+<learner>
+${learnerContext(ex.track)}
+</learner>
+<exercise>
+${JSON.stringify({ skill: ex.skill, kind: ex.kind, instructions: ex.instructions, content: ex.content, options: ex.options, reference_answer: ex.reference_answer })}
+</exercise>
+<student_answer>
+${answer.slice(0, 8000)}
+</student_answer>
+${testRun ? `Se ejecutó su código: pasó ${testRun.passed} de ${testRun.total} tests.${testRun.error ? ` Error general: ${testRun.error}` : ""}
+<test_results>${JSON.stringify(testRun.results.map(({ description, args_json, expected_json, passed, actual, error }) => ({ description, args_json, expected_json, passed, actual, error })))}</test_results>
+Los tests son la verdad: no digas que funciona si alguno falla; explica el caso concreto.` : ""}
+
+Responde SOLO con un objeto JSON:
+{"score": 0-100 (70+ = aceptable), "verdict": "correcto|casi|incorrecto",
+ "feedback": "corrección en español en markdown: qué estuvo bien, qué falló y por qué, y la versión correcta",
+ "mistake_summary": "el error concreto en una línea (vacío si no hubo)",
+ "other_weak_skills": ["otras habilidades donde falló, nombres cortos en español"], "tip": "un consejo práctico"}`, { cache: false });
+    let score = clamp(g?.score, 0, 100);
+    let verdict = ["correcto", "casi", "incorrecto"].includes(g?.verdict) ? g.verdict : score >= 85 ? "correcto" : score >= 70 ? "casi" : "incorrecto";
+    if (testRun) {
+      const all = !testRun.error && testRun.passed === testRun.total;
+      score = all ? Math.max(score, 70) : Math.min(score, 69);
+      if (all && verdict === "incorrecto") verdict = "casi";
+      if (!all && verdict === "correcto") verdict = "casi";
+    }
+    recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
+    save();
+    const sk = S.skills[skillKey(ex.track, ex.skill)];
+    res.innerHTML = `
+      <p class="verdict v-${verdict}">${{ correcto: "¡Correcto!", casi: "Casi", incorrecto: "Incorrecto" }[verdict]} · ${score}/100</p>
+      ${testRun ? testRunHTML(testRun, ex.function_name) : ""}
+      ${md(str(g?.feedback))}
+      ${g?.tip ? `<p><b>Consejo:</b> ${esc(g.tip)}</p>` : ""}
+      <details><summary>Respuesta de referencia</summary>${ex.tests.length || ex.kind === "code" ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>
+      <p class="muted">Próximo repaso de «${esc(ex.skill)}»: ${sk.intervalDays === 0 ? "en tu próxima sesión (hay que reforzarlo)" : whenText(sk.dueAt)}.</p>
+      <div class="row"><button class="btn" id="next">Siguiente ejercicio</button></div>`;
+    $("#next").onclick = () => $("#new-ex").requestSubmit($('#new-ex button[value="auto"]'));
+    $("#answer-form").querySelector(".row").remove();
+    $("#run-out").innerHTML = "";
+    renderDueBanner();
+  } catch (err) {
+    res.innerHTML = `<p class="error">${esc(errText(err))}</p>`;
+    btn.disabled = false;
+  }
+}
+function whenText(iso) {
+  const d = Math.round((new Date(iso) - Date.now()) / DAY);
+  return d <= 0 ? "hoy" : d === 1 ? "mañana" : d < 60 ? `en ${d} días` : `en ${Math.round(d / 30)} meses`;
+}
+
+// ================= Voz =================
+const canSpeak = "speechSynthesis" in window;
+const LANG = { us: "en-US", uk: "en-GB", au: "en-AU" };
+let voicesP;
+function voices() {
+  voicesP ??= new Promise((res) => {
+    const v = speechSynthesis.getVoices();
+    if (v.length) return res(v);
+    speechSynthesis.addEventListener("voiceschanged", () => res(speechSynthesis.getVoices()), { once: true });
+    setTimeout(() => res(speechSynthesis.getVoices()), 1500);
+  });
+  return voicesP;
+}
+async function speak(text, slower = false) {
+  if (!canSpeak || !text) return;
+  try {
+    speechSynthesis.cancel();
+    const lang = LANG[$("#accent").value] ?? "en-US";
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = slower ? Math.min(Number($("#rate").value), 0.78) : Number($("#rate").value);
+    const rank = (v) => (/natural|neural|premium|enhanced/i.test(v.name) ? 0 : /google|samantha|daniel|karen|siri/i.test(v.name) ? 1 : 2);
+    const v = (await voices()).filter((x) => x.lang.replace("_", "-").startsWith(lang)).sort((a, b) => rank(a) - rank(b))[0];
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+const stopSpeak = () => { try { canSpeak && speechSynthesis.cancel(); } catch {} };
+const sayBtn = (t, label = "Escuchar") => (canSpeak ? `<button type="button" class="say" data-say="${esc(t)}">🔊 ${label}</button>` : "");
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-say]");
+  if (b) speak(b.dataset.say, b.dataset.slow === "1");
+});
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let activeRec = null;
+function listenOnce(onInterim) {
+  return new Promise((resolve, reject) => {
+    if (!Recognition) return reject(new Error("nope"));
+    const r = (activeRec = new Recognition());
+    // Si el navegador no responde (micrófono bloqueado sin aviso), no dejamos el botón colgado.
+    const guard = setTimeout(() => { try { r.abort(); } catch {} reject(new Error("timeout")); }, 12000);
+    r.lang = LANG[$("#accent").value] ?? "en-US";
+    r.interimResults = true;
+    let fin = "";
+    r.onresult = (e) => { let mid = ""; for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) fin += e.results[i][0].transcript; else mid += e.results[i][0].transcript; } onInterim((fin + mid).trim()); };
+    r.onerror = (e) => { if (!(e.error === "no-speech" && fin)) { clearTimeout(guard); reject(new Error(e.error)); } };
+    r.onend = () => { clearTimeout(guard); resolve(fin.trim()); };
+    try { r.start(); } catch (err) { reject(err); }
+  });
+}
+const DICTATE_TIP = "Aquí el micrófono de la página no está disponible. Toca el 🎤 de tu teclado para dictar en inglés y luego pulsa Enviar.";
+
+// ================= Conversar =================
+const SCENARIOS = [
+  { id: "coffee", title: "Pedir en una cafetería", goal: "Pide una bebida y algo de comer, pregunta algo del menú y paga.", character: "a friendly, fast-talking barista at a busy coffee shop (size, milk, for here or to go, name for the cup)." },
+  { id: "small-talk", title: "Small talk", goal: "Charla ligera: el tiempo, de dónde eres, a qué te dedicas, planes del finde.", character: "a chatty local next to the student at a bus stop or a party. Casual and curious." },
+  { id: "new-friend", title: "Hacer amigos", goal: "Conoce a alguien, encontrad cosas en común y quedad otro día.", character: "an easygoing person in their late twenties at a meetup. Casual slang, jokes, asks back." },
+  { id: "directions", title: "Pedir indicaciones", goal: "Pregunta cómo llegar a un sitio, entiende las indicaciones y confírmalas.", character: "a local giving directions with landmarks and phrases like 'hang a left', 'you can't miss it'." },
+  { id: "restaurant", title: "En un restaurante", goal: "Pide mesa, pregunta recomendaciones, pide con una alergia y resuelve un problema con el plato.", character: "a server at a casual restaurant who handles a mix-up with the order." },
+  { id: "job-interview", title: "Entrevista de trabajo", goal: "Preséntate, habla de tu experiencia y responde preguntas típicas.", character: "a hiring manager at a tech company running a friendly but real interview with follow-ups." },
+  { id: "doctor", title: "En el médico", goal: "Explica tus síntomas, responde preguntas y entiende el tratamiento.", character: "a family doctor using plain everyday language." },
+  { id: "phone-call", title: "Llamada a atención al cliente", goal: "Resuelve un problema con internet, un pedido o una reserva.", character: "a customer service agent on the phone who verifies details and puts the student on hold." },
+  { id: "standup", title: "Reunión de equipo (dev)", goal: "Cuenta qué hiciste, en qué estás bloqueado y opina sobre una decisión técnica.", character: "a teammate leading a software stand-up using 'blocker', 'circle back', 'ship it', 'sync up'." },
+];
+const ACCENT_NAME = { us: "American (US) English", uk: "British (UK) English", au: "Australian English" };
+const LEVEL_STYLE = {
+  A1: "Frases muy cortas y vocabulario básico, pero naturales (con contracciones).", A2: "Frases cortas y vocabulario frecuente, natural, con alguna expresión muy común.",
+  B1: "Como un nativo amable: contracciones, phrasal verbs y expresiones comunes.", B2: "Como un nativo normal: ritmo natural, phrasal verbs, idioms comunes y algo de slang.",
+  C1: "Exactamente como un nativo, con slang, idioms y humor.", C2: "Exactamente como un nativo, con slang, idioms y humor.",
+};
+const T = { scenario: null, msgs: [], turns: [], busy: false, suggestions: [] };
+$("#scenarios").innerHTML = SCENARIOS.map((s) => `<button class="scenario" data-sc="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.goal)}</span></button>`).join("");
+$("#scenarios").addEventListener("click", (e) => { const b = e.target.closest("[data-sc]"); if (b) startTalk(SCENARIOS.find((s) => s.id === b.dataset.sc)); });
+
+function startTalk(sc) {
+  Object.assign(T, { scenario: sc, msgs: [], turns: [], suggestions: [] });
+  $("#talk-setup").hidden = true; $("#talk-summary").hidden = true; $("#talk-session").hidden = false; $("#goal-done").hidden = true;
+  $("#talk-title").textContent = sc.title;
+  $("#talk-goal").textContent = "Tu objetivo: " + sc.goal;
+  renderTalk();
+  talkTurn();
+}
+const transcript = () => T.msgs.map((m) => `${m.role === "user" ? "STUDENT" : "YOU (character)"}: ${m.content}`).join("\n");
+async function talkTurn() {
+  T.busy = true;
+  setTalkStatus("El nativo está pensando…");
+  $("#suggestions").hidden = true;
+  const sc = T.scenario, accent = $("#accent").value, level = S.profile.englishLevel;
+  const last = T.msgs.at(-1);
+  try {
+    const r = await askJSON(`${TUTOR}
+
+Ahora haces un ROLE-PLAY para que el alumno aprenda a hablar con nativos de verdad.
+Personaje: ${sc.character}
+Situación del alumno: ${sc.goal}
+Acento y vocabulario: ${ACCENT_NAME[accent]}. Nivel del alumno: ${level}. ${LEVEL_STYLE[level] ?? LEVEL_STYLE.B1}
+Reglas del personaje: habla como esa persona en la vida real (contracciones, muletillas naturales), 1-3 frases como en una
+conversación hablada; mantente en el personaje, haz avanzar la situación con preguntas o pequeños imprevistos y nunca corrijas
+dentro del personaje. "reply" se lee en voz alta: sin emojis, listas ni acotaciones.
+
+${T.msgs.length ? `<conversation>
+${transcript()}
+</conversation>
+Responde como el personaje al último mensaje del alumno y corrige ESE mensaje ("${last.content}"). Puede venir de dictado por voz:
+ignora mayúsculas y puntuación y no cuentes como error una palabra mal transcrita. Señala solo lo que importa para sonar natural
+y que te entiendan; si ya suena natural, has_issue=false.` : "Abre la conversación como el personaje (el alumno aún no ha dicho nada); feedback con has_issue=false."}
+
+Responde SOLO con un objeto JSON:
+{"reply": "lo que dice el personaje, en inglés hablado", "reply_es": "traducción natural al español",
+ "feedback": {"has_issue": true|false, "type": "gramática|vocabulario|naturalidad|registro|comprensión", "native_version": "cómo lo diría un nativo", "explanation_es": "explicación breve", "skill": "habilidad corta en español"},
+ "suggestions": ["2 respuestas naturales que podría decir ahora el alumno"], "goal_completed": true|false}`, { modelTier: "quick", cache: false });
+    const reply = str(r?.reply);
+    if (!reply) throw { code: "invalid_json" };
+    const lastMine = [...T.turns].reverse().find((t) => t.role === "user");
+    if (lastMine && r.feedback) lastMine.fb = { has: Boolean(r.feedback.has_issue), type: str(r.feedback.type), nat: str(r.feedback.native_version), why: str(r.feedback.explanation_es) };
+    T.msgs.push({ role: "assistant", content: reply });
+    T.turns.push({ role: "assistant", text: reply, es: str(r.reply_es), shown: !$("#listen-mode").checked });
+    T.suggestions = arr(r.suggestions).map(str).filter(Boolean).slice(0, 3);
+    if (r.goal_completed === true) $("#goal-done").hidden = false;
+    renderTalk();
+    setTalkStatus("");
+    speak(reply);
+  } catch (err) {
+    setTalkStatus(errText(err), true);
+    if (T.msgs.at(-1)?.role === "user") { $("#talk-text").value = T.msgs.pop().content; T.turns.pop(); renderTalk(); }
+  } finally {
+    T.busy = false;
+  }
+}
+function renderTalk() {
+  $("#talk-log").innerHTML = T.turns.map((t, i) => {
+    if (t.role === "assistant") {
+      return `<div class="bubble them"><p class="${t.shown ? "" : "blur"}" data-reveal="${i}" ${t.shown ? "" : 'title="Toca para ver el texto"'}>${esc(t.text)}</p>
+        ${t.showEs ? `<p class="tr">${esc(t.es)}</p>` : ""}
+        <div class="tools">${sayBtn(t.text, "Repetir")}${canSpeak ? `<button type="button" data-say="${esc(t.text)}" data-slow="1">🐢 Más lento</button>` : ""}<button type="button" data-tr="${i}">${t.showEs ? "Ocultar traducción" : "Traducir"}</button></div></div>`;
+    }
+    const f = t.fb;
+    return `<div class="bubble me"><p>${esc(t.text)}</p></div>${!f ? "" : f.has
+      ? `<div class="fb"><span>Un nativo diría: <b>${esc(f.nat)}</b> ${sayBtn(f.nat)}</span><span class="muted">${f.type ? `<span class="chip">${esc(f.type)}</span> ` : ""}${esc(f.why)}</span></div>`
+      : '<div class="fb ok">✓ Suena natural</div>'}`;
+  }).join("");
+  $("#talk-log").lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+$("#talk-log").addEventListener("click", (e) => {
+  const rv = e.target.closest("[data-reveal]");
+  if (rv && !T.turns[rv.dataset.reveal].shown) { T.turns[rv.dataset.reveal].shown = true; renderTalk(); }
+  const tr = e.target.closest("[data-tr]");
+  if (tr) { const t = T.turns[tr.dataset.tr]; t.showEs = !t.showEs; renderTalk(); }
+});
+function setTalkStatus(t, err = false) { const el = $("#talk-status"); el.textContent = t; el.classList.toggle("error", err); }
+async function sendTalk(text) {
+  text = text.trim().slice(0, 1000);
+  if (!text || T.busy) return;
+  stopSpeak();
+  $("#talk-text").value = "";
+  T.msgs.push({ role: "user", content: text });
+  T.turns.push({ role: "user", text });
+  renderTalk();
+  await talkTurn();
+}
+$("#talk-form").addEventListener("submit", (e) => { e.preventDefault(); sendTalk($("#talk-text").value); });
+$("#help").onclick = () => {
+  if (!T.suggestions.length) return;
+  const box = $("#suggestions");
+  box.innerHTML = '<span class="muted">Podrías decir:</span>' + T.suggestions.map((s) => `<button type="button" class="btn ghost small" data-sug="${esc(s)}">${esc(s)}</button>`).join("");
+  box.hidden = !box.hidden;
+};
+$("#suggestions").addEventListener("click", (e) => { const b = e.target.closest("[data-sug]"); if (b) { $("#talk-text").value = b.dataset.sug; speak(b.dataset.sug); $("#talk-text").focus(); } });
+$("#mic").onclick = async () => {
+  if (activeRec) { try { activeRec.stop(); } catch {} return; }
+  if (T.busy) return;
+  stopSpeak();
+  $("#mic").classList.add("on");
+  setTalkStatus("Te escucho…");
+  try {
+    const text = await listenOnce((t) => ($("#talk-text").value = t));
+    setTalkStatus("");
+    if (text) await sendTalk(text);
+  } catch {
+    setTalkStatus(DICTATE_TIP);
+    $("#talk-text").focus();
+  } finally {
+    activeRec = null;
+    $("#mic").classList.remove("on");
+  }
+};
+const exitTalk = () => { stopSpeak(); $("#talk-session").hidden = true; $("#talk-summary").hidden = true; $("#talk-setup").hidden = false; renderPhrases(); };
+$("#talk-exit").onclick = () => {
+  if (T.msgs.some((m) => m.role === "user") && $("#talk-exit").dataset.confirm !== "1") {
+    $("#talk-exit").dataset.confirm = "1"; $("#talk-exit").textContent = "¿Salir sin evaluar?";
+    setTimeout(() => { $("#talk-exit").dataset.confirm = ""; $("#talk-exit").textContent = "Salir"; }, 3000);
+    return;
+  }
+  $("#talk-exit").dataset.confirm = ""; $("#talk-exit").textContent = "Salir";
+  exitTalk();
+};
+$("#talk-end").onclick = async () => {
+  if (T.msgs.filter((m) => m.role === "user").length < 2) return setTalkStatus("Habla un poco más (al menos 2 frases) para poder evaluarte.", true);
+  const btn = $("#talk-end");
+  btn.disabled = true; stopSpeak(); setTalkStatus("Evaluando tu conversación…");
+  try {
+    const r = await askJSON(`${TUTOR}
+
+El alumno acaba de practicar una conversación hablada (role-play) para aprender a hablar con nativos.
+Situación: ${T.scenario.title}. Objetivo: ${T.scenario.goal}. Acento: ${ACCENT_NAME[$("#accent").value]}. Nivel: ${S.profile.englishLevel}.
+Su texto puede venir de dictado por voz: no penalices puntuación, mayúsculas ni palabras mal transcritas.
+<learner>
+${learnerContext("english")}
+</learner>
+<conversation>
+${transcript()}
+</conversation>
+Evalúa. En "skills" usa nombres que ya existan en su progreso cuando sea la misma habilidad, e incluye la de la situación (p. ej. "Conversación: ${T.scenario.title.toLowerCase()}").
+
+Responde SOLO con un objeto JSON:
+{"overall_es": "valoración en 2-3 frases", "fluency": 0-100, "naturalness": 0-100, "accuracy": 0-100, "strengths": ["..."],
+ "to_improve": [{"skill": "", "you_said": "", "native_version": "", "tip_es": ""}],
+ "skills": [{"skill": "", "score": 0-100, "mistake": "error concreto si score < 70, si no vacío"}],
+ "native_phrases": [{"phrase": "expresión de nativo útil aquí", "meaning_es": "", "when_to_use_es": ""}] (5-8)}`, { cache: false });
+    for (const s of arr(r?.skills)) if (str(s?.skill)) recordAttempt({ track: "english", skill: str(s.skill), score: clamp(s.score, 0, 100), mistake: str(s.mistake) });
+    const added = addPhrases(arr(r?.native_phrases).filter((p) => str(p?.phrase)), T.scenario.id);
+    save();
+    renderSummary(r, added);
+    setTalkStatus("");
+  } catch (err) {
+    setTalkStatus(errText(err), true);
+  } finally {
+    btn.disabled = false;
+  }
+};
+const meter = (v) => `<div class="meter"><i style="width:${v}%;background:${v >= 80 ? "var(--good)" : v >= 50 ? "var(--mid)" : "var(--bad)"}"></i></div>`;
+function renderSummary(r, added) {
+  $("#talk-session").hidden = true;
+  const box = $("#talk-summary");
+  box.hidden = false;
+  const sc = (l, v) => `<div class="stat"><span class="muted">${l}</span><b>${clamp(v, 0, 100)}</b>${meter(clamp(v, 0, 100))}</div>`;
+  box.innerHTML = `<div class="card">
+    <span class="eyebrow">Evaluación</span><h2>${esc(T.scenario.title)}</h2>
+    <div class="scores">${sc("Fluidez", r?.fluency)}${sc("Naturalidad", r?.naturalness)}${sc("Corrección", r?.accuracy)}</div>
+    <p>${esc(r?.overall_es)}</p>
+    ${arr(r?.strengths).length ? `<h3>Lo que hiciste bien</h3><ul>${arr(r.strengths).map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+    ${arr(r?.to_improve).length ? `<h3>Para sonar como un nativo</h3>${arr(r.to_improve).map((t) => `<p><span class="chip">${esc(t?.skill)}</span><br>Dijiste: <em>${esc(t?.you_said)}</em><br>Nativo: <b>${esc(t?.native_version)}</b> ${sayBtn(str(t?.native_version))}<br><span class="muted">${esc(t?.tip_es)}</span></p>`).join("")}` : ""}
+    <h3>Expresiones de nativo</h3>
+    <ul>${arr(r?.native_phrases).map((p) => `<li><b>${esc(p?.phrase)}</b> ${sayBtn(str(p?.phrase))} — ${esc(p?.meaning_es)} <span class="muted">(${esc(p?.when_to_use_es)})</span></li>`).join("")}</ul>
+    <p class="muted">${added} frase${added === 1 ? "" : "s"} nueva${added === 1 ? "" : "s"} en tu libreta. Tus resultados ya cuentan en tu progreso.</p>
+    <div class="row"><button class="btn" id="again">Repetir situación</button><button class="btn ghost" id="other">Elegir otra</button></div></div>`;
+  $("#again").onclick = () => startTalk(T.scenario);
+  $("#other").onclick = exitTalk;
+}
+
+// Libreta de frases
+const PH = { queue: [], cur: null };
+function renderPhrases() {
+  const due = duePhrases();
+  $("#phrase-status").textContent = S.phrases.length
+    ? `Tienes ${S.phrases.length} frase${S.phrases.length === 1 ? "" : "s"}; ${due.length} para repasar hoy.`
+    : "Las expresiones útiles de tus conversaciones se guardan aquí para repasarlas.";
+  $("#phrase-start").hidden = due.length === 0 || PH.cur !== null;
+}
+$("#phrase-start").onclick = () => { PH.queue = duePhrases(); $("#phrase-start").hidden = true; nextPhrase(); };
+function nextPhrase() {
+  const p = (PH.cur = PH.queue.shift() ?? null);
+  const card = $("#phrase-card");
+  if (!p) { card.innerHTML = "<p>✓ Repaso terminado.</p>"; renderPhrases(); return; }
+  card.innerHTML = `<p><b>${esc(p.meaning_es)}</b><br><span class="muted">${esc(p.when_to_use_es)}</span></p>
+    <p class="muted">¿Cómo lo diría un nativo? Dilo (dictado del teclado) o escríbelo.</p>
+    <form class="row" id="ph-form"><input type="text" id="ph-answer" class="grow" autocomplete="off" placeholder="En inglés…"><button class="btn" type="submit">Comprobar</button></form>
+    <div id="ph-out"></div>`;
+  $("#ph-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const answer = $("#ph-answer").value;
+    if (!answer.trim()) return;
+    const r = comparePhrase(p.phrase, answer);
+    schedule(p, r.score);
+    save();
+    $("#ph-out").innerHTML = `<p>${r.score >= 85 ? "✓" : r.score >= 70 ? "≈" : "✗"} ${r.score}/100 · <b>${esc(p.phrase)}</b> ${sayBtn(p.phrase)}</p>
+      <p class="words">${r.words.map((w) => `<span class="${w.ok ? "ok" : "miss"}">${esc(w.w)}</span>`).join("")}</p>
+      <p class="muted">Dijiste: ${esc(answer)}</p><div class="row"><button class="btn" id="ph-next">Siguiente</button></div>`;
+    $("#ph-form").remove();
+    speak(p.phrase);
+    $("#ph-next").onclick = nextPhrase;
+  });
+}
+
+// ================= Progreso =================
+let pTrack = "english";
+$$("[data-ptrack]").forEach((b) => b.addEventListener("click", () => {
+  pTrack = b.dataset.ptrack;
+  $$("[data-ptrack]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  $("#insights").hidden = true;
+  renderProgress();
+}));
+function renderProgress() {
+  const s = summary(pTrack);
+  const f = (v) => (v === null ? "—" : v);
+  $("#stats").innerHTML = `<div class="stat"><span class="muted">Repasos hoy</span><b>${s.dueForReview.length}</b></div>
+    <div class="stat"><span class="muted">Ejercicios</span><b>${s.totalAttempts}</b></div>
+    <div class="stat"><span class="muted">Dominio medio</span><b>${f(s.averageMastery)}</b></div>
+    <div class="stat"><span class="muted">Nota últimos 20</span><b>${f(s.recentAverageScore)}</b></div>`;
+  const sk = skillsFor(pTrack).sort((a, b) => a.mastery - b.mastery);
+  $("#skills").innerHTML = sk.length ? sk.map((x) => `<div class="skill">
+      <div class="skill-head"><b>${esc(x.name)}</b><span class="muted mono">${x.mastery}/100 · ${x.correct}/${x.attempts} bien</span></div>
+      ${meter(x.mastery)}<span class="muted">Próximo repaso: ${x.dueAt ? whenText(x.dueAt) : "hoy"}</span>
+      ${x.mistakes.length ? `<ul>${x.mistakes.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>` : ""}</div>`).join("")
+    : '<p class="muted">Aún no hay datos. Haz ejercicios en Practicar o una conversación en Conversar y aquí verás qué dominas y qué te falla.</p>';
+}
+$("#analyze").onclick = async () => {
+  const btn = $("#analyze"), box = $("#insights");
+  btn.disabled = true; box.hidden = false; box.innerHTML = '<p class="thinking">Analizando tus errores</p>';
+  try {
+    const r = await askJSON(`${TUTOR}
+
+Analiza el progreso del alumno en ${pTrack === "english" ? "inglés" : "programación"}. Busca patrones en sus errores (no repitas los números)
+y propone un plan concreto. Si casi no hay datos, dilo y sugiere cómo empezar.
+<learner>
+${learnerContext(pTrack)}
+</learner>
+Responde SOLO con un objeto JSON:
+{"summary": "diagnóstico en 2-3 frases", "strengths": ["..."], "weaknesses": [{"skill": "", "pattern": "qué error se repite", "how_to_fix": ""}],
+ "plan": ["7 pasos, uno por día"]}`);
+    box.innerHTML = `<span class="eyebrow">Diagnóstico</span><p>${esc(r?.summary)}</p>
+      ${arr(r?.strengths).length ? `<h3>Puntos fuertes</h3><ul>${arr(r.strengths).map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+      ${arr(r?.weaknesses).length ? `<h3>Lo que te falla</h3>${arr(r.weaknesses).map((w) => `<p><b>${esc(w?.skill)}:</b> ${esc(w?.pattern)}<br><span class="muted">Cómo mejorar: ${esc(w?.how_to_fix)}</span></p>`).join("")}` : ""}
+      <h3>Plan de 7 días</h3><ol>${arr(r?.plan).map((p) => `<li>${esc(p)}</li>`).join("")}</ol>`;
+  } catch (err) {
+    box.innerHTML = `<p class="error">${esc(errText(err))}</p>`;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+// ================= Tutor =================
+const chat = [];
+$("#chat-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = $("#chat-text"), text = input.value.trim().slice(0, 4000);
+  if (!text) return;
+  input.value = "";
+  chat.push({ role: "user", content: text });
+  const log = $("#chat-log");
+  log.insertAdjacentHTML("beforeend", `<div class="bubble me"><p>${esc(text)}</p></div><div class="bubble them"><div class="thinking">Pensando</div></div>`);
+  const out = log.lastElementChild;
+  out.scrollIntoView({ block: "nearest" });
+  try {
+    const { text: reply } = await ask([{ role: "user", content: `${TUTOR}\n\nProgreso actual del alumno:\n${learnerContext()}\n\nResponde a sus mensajes con explicaciones breves y ejemplos.` }, ...chat.slice(-20)],
+      { cache: false, onText: ({ text: t }) => { out.innerHTML = md(t); } });
+    chat.push({ role: "assistant", content: reply });
+    out.innerHTML = md(reply);
+  } catch (err) {
+    chat.pop();
+    input.value = text;
+    out.innerHTML = `<p class="error">${esc(errText(err))}</p>`;
+  }
+});
+
+// ================= Perfil =================
+function renderProfile() {
+  $("#p-level").value = S.profile.englishLevel; $("#p-lang").value = S.profile.programmingLanguage;
+  $("#p-plevel").value = S.profile.programmingLevel; $("#p-goals").value = S.profile.goals;
+}
+$("#profile-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500) });
+  save();
+  $("#p-saved").hidden = false;
+  setTimeout(() => ($("#p-saved").hidden = true), 2000);
+});
+
+// ================= Navegación =================
+$$("nav.tabs button").forEach((b) => b.addEventListener("click", () => {
+  $$("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  $$("section.view").forEach((v) => (v.hidden = v.id !== "view-" + b.dataset.view));
+  if (b.dataset.view === "progress") renderProgress();
+  if (b.dataset.view === "talk") renderPhrases();
+  if (b.dataset.view === "profile") renderProfile();
+  window.scrollTo({ top: 0 });
+}));
+function renderAll() { renderDueBanner(); renderProgress(); renderPhrases(); renderProfile(); }
+
+initStore();
+})();
+</script>

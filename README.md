@@ -3,6 +3,14 @@
 App web para aprender **inglés que puedas usar con nativos** y **programación**, con un tutor IA (Claude) que sigue
 tu progreso, detecta qué te falla y adapta los ejercicios a tus puntos débiles. Se puede instalar en el móvil.
 
+## Dos formas de usarla
+
+- **Sin instalar nada (recomendado si no tienes clave de API):** la versión de `claude-app/my-school.html` está publicada
+  en claude.ai: https://claude.ai/artifact/WXb84YAKPXr5cFbhjvhihu. Se abre con ese enlace desde el móvil o el ordenador,
+  usa Claude con tu cuenta (sin clave) y guarda tu progreso en tu cuenta. Diferencias: para hablar se usa el dictado del
+  teclado (la página no puede usar el micrófono directamente) y los tests reales de código son solo para JavaScript.
+- **En tu ordenador, con clave de API:** la app Node de este repositorio (ver *Puesta en marcha*).
+
 ## Qué hace
 
 - **🎙️ Conversar con nativos**: role-plays por voz en situaciones reales (cafetería, small talk, hacer amigos,
