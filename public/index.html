@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MY-SCHOOL</title>
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,6 +16,7 @@
     <h1>MY-SCHOOL</h1>
     <nav>
       <button data-view="practice" class="active">Practicar</button>
+      <button data-view="talk">🎙️ Conversar</button>
       <button data-view="progress">Mi progreso</button>
       <button data-view="tutor">Tutor IA</button>
       <button data-view="profile">Perfil</button>
@@ -31,6 +37,62 @@
       </form>
       <div id="exercise" class="card hidden"></div>
       <div id="result" class="card hidden"></div>
+    </section>
+
+    <section id="view-talk" class="view">
+      <div id="talk-setup">
+        <p class="muted">Habla con un nativo en situaciones reales. Te contesta en voz alta y te dice cómo lo diría un nativo.</p>
+        <div id="scenario-list" class="scenarios"></div>
+        <div class="card form talk-options">
+          <label>Acento
+            <select id="talk-accent">
+              <option value="us">🇺🇸 Americano</option>
+              <option value="uk">🇬🇧 Británico</option>
+              <option value="au">🇦🇺 Australiano</option>
+            </select>
+          </label>
+          <label>Velocidad de la voz
+            <select id="talk-rate">
+              <option value="0.85">Más lenta</option>
+              <option value="1" selected>Normal (como un nativo)</option>
+              <option value="1.15">Rápida</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="talk-listen-mode"> Modo escucha: ocultar lo que dice el nativo hasta que lo toques</label>
+          <label class="check"><input type="checkbox" id="talk-autosend" checked> Enviar al terminar de hablar</label>
+        </div>
+        <div class="card">
+          <h3>📒 Frases de nativo</h3>
+          <p id="phrase-status" class="muted">Las expresiones útiles de tus conversaciones se guardan aquí para repasarlas.</p>
+          <button id="phrase-start" class="hidden">Repasar frases</button>
+          <div id="phrase-card"></div>
+        </div>
+      </div>
+
+      <div id="talk-session" class="hidden">
+        <div class="talk-head">
+          <div>
+            <strong id="talk-title"></strong>
+            <p id="talk-goal" class="muted"></p>
+          </div>
+          <div class="talk-actions">
+            <button id="talk-exit" class="secondary">Salir</button>
+            <button id="talk-end">Terminar y evaluar</button>
+          </div>
+        </div>
+        <p id="talk-goal-done" class="goal-done hidden">🎯 ¡Objetivo conseguido! Puedes seguir hablando o terminar para ver tu evaluación.</p>
+        <div id="talk-log"></div>
+        <div id="talk-suggestions" class="suggestions hidden"></div>
+        <form id="talk-form" class="talk-input">
+          <button type="button" id="talk-mic" class="mic" title="Hablar">🎤</button>
+          <input id="talk-text" placeholder="Habla con el micrófono o escribe en inglés…" autocomplete="off">
+          <button type="submit">Enviar</button>
+          <button type="button" id="talk-help" class="secondary" title="Ideas de qué decir">💡</button>
+        </form>
+        <p id="talk-status" class="muted"></p>
+      </div>
+
+      <div id="talk-summary" class="hidden"></div>
     </section>
 
     <section id="view-progress" class="view">
@@ -83,5 +145,6 @@
   </main>
 
   <script type="module" src="app.js"></script>
+  <script type="module" src="conversation.js"></script>
 </body>
 </html>

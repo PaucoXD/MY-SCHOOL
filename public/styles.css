@@ -74,3 +74,48 @@ pre code { padding: 0; }
 @media (max-width: 560px) {
   .row { flex-direction: column; align-items: stretch; }
 }
+
+/* Conversación */
+.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin: 12px 0; }
+.scenario { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.scenario:hover { border-color: var(--accent); }
+.scenario strong { display: block; margin-bottom: 4px; }
+.scenario span { color: var(--muted); font-size: 14px; }
+.talk-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.talk-options .check { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; }
+.talk-options .check input { width: auto; }
+.talk-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.talk-head p { margin: 4px 0 0; }
+.talk-actions { display: flex; gap: 8px; flex: none; }
+.goal-done { background: var(--card); border: 1px solid var(--good); border-radius: 10px; padding: 8px 12px; }
+#talk-log { margin: 12px 0; }
+.bubble { padding: 10px 14px; border-radius: 14px; margin: 8px 0; max-width: 88%; }
+.bubble.native { background: var(--card); border: 1px solid var(--border); }
+.bubble.me { background: var(--accent); color: #fff; margin-left: auto; }
+.bubble .tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.bubble .tools button { padding: 2px 8px; font-size: 13px; background: transparent; color: var(--muted); border-color: var(--border); }
+.bubble .es { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.hidden-text { filter: blur(6px); cursor: pointer; user-select: none; }
+.feedback { max-width: 88%; margin: -2px 0 10px auto; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px dashed var(--border); background: var(--card); }
+.feedback.ok { color: var(--good); border-style: solid; }
+.feedback .native-line { font-weight: 600; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.suggestions button { background: var(--card); color: var(--text); border-color: var(--border); font-size: 14px; text-align: left; }
+.talk-input { display: flex; gap: 8px; align-items: center; position: sticky; bottom: 0; background: var(--bg); padding: 8px 0; }
+.talk-input input { flex: 1; }
+.mic { font-size: 22px; width: 52px; height: 52px; border-radius: 50%; padding: 0; flex: none; }
+.mic.listening { background: var(--bad); border-color: var(--bad); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+.scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.words span { display: inline-block; margin: 2px 4px 2px 0; padding: 1px 6px; border-radius: 6px; }
+.words .ok { background: color-mix(in srgb, var(--good) 20%, transparent); }
+.words .miss { background: color-mix(in srgb, var(--bad) 20%, transparent); text-decoration: underline wavy var(--bad); }
+.say { padding: 2px 8px; font-size: 13px; background: transparent; color: var(--muted); border-color: var(--border); }
+@media (max-width: 560px) {
+  .talk-options { grid-template-columns: 1fr; }
+  .scores .stat b { font-size: 20px; }
+  .talk-head { flex-direction: column; }
+  header { padding: 10px 12px; }
+  nav { flex-wrap: nowrap; overflow-x: auto; width: 100%; }
+  nav button { padding: 6px 10px; font-size: 14px; white-space: nowrap; }
+}

@@ -29,6 +29,7 @@ export function emptyState() {
     },
     skills: {},
     history: [],
+    phrases: [],
   };
 }
 
@@ -153,6 +154,103 @@ export function trackSummary(state, track, now = new Date()) {
       .slice(0, 3)
       .map(({ name, mastery }) => ({ name, mastery })),
   };
+}
+
+// ---------- Libreta de frases de nativo ----------
+
+const CONTRACTIONS = {
+  "i'm": "i am", "you're": "you are", "we're": "we are", "they're": "they are", "he's": "he is", "she's": "she is",
+  "it's": "it is", "that's": "that is", "what's": "what is", "there's": "there is", "here's": "here is",
+  "i've": "i have", "you've": "you have", "we've": "we have", "they've": "they have",
+  "i'll": "i will", "you'll": "you will", "we'll": "we will", "they'll": "they will", "it'll": "it will",
+  "i'd": "i would", "you'd": "you would", "we'd": "we would", "they'd": "they would",
+  "don't": "do not", "doesn't": "does not", "didn't": "did not", "can't": "can not", "cannot": "can not",
+  "won't": "will not", "isn't": "is not", "aren't": "are not", "wasn't": "was not", "weren't": "were not",
+  "haven't": "have not", "hasn't": "has not", "wouldn't": "would not", "couldn't": "could not", "shouldn't": "should not",
+  "let's": "let us", "gonna": "going to", "wanna": "want to", "gotta": "got to",
+  // Sin apóstrofo, como se suele teclear en el móvil.
+  im: "i am", youre: "you are", theyre: "they are", thats: "that is", whats: "what is", ive: "i have",
+  dont: "do not", doesnt: "does not", didnt: "did not", cant: "can not", isnt: "is not", arent: "are not",
+  wasnt: "was not", havent: "have not", wouldnt: "would not", couldnt: "could not", shouldnt: "should not",
+};
+
+// Palabras normalizadas: minúsculas, sin puntuación y con contracciones expandidas,
+// para que "I'm gonna" y "I am going to" cuenten igual.
+export function phraseWords(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[^a-z0-9' ]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .flatMap((w) => (CONTRACTIONS[w] ?? w.replace(/^'+|'+$/g, "")).split(" "))
+    .filter(Boolean);
+}
+
+// Compara lo que dijo/escribió el alumno con la frase esperada (subsecuencia común más larga).
+// Devuelve la nota 0-100 y, para cada palabra esperada, si la dijo.
+export function comparePhrase(expected, answer) {
+  const a = phraseWords(expected);
+  const b = phraseWords(answer);
+  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const words = [];
+  for (let i = 0, j = 0; i < a.length; ) {
+    if (j < b.length && a[i] === b[j]) {
+      words.push({ word: a[i], ok: true });
+      i++;
+      j++;
+    } else if (j < b.length && dp[i][j + 1] >= dp[i + 1][j]) {
+      j++;
+    } else {
+      words.push({ word: a[i], ok: false });
+      i++;
+    }
+  }
+  const total = a.length + b.length;
+  const score = total ? Math.round((200 * dp[0][0]) / total) : 0;
+  return { score, words };
+}
+
+export function addPhrases(state, phrases, { scenario } = {}, now = new Date()) {
+  state.phrases ??= [];
+  const known = new Set(state.phrases.map((p) => phraseWords(p.phrase).join(" ")));
+  const added = [];
+  for (const p of phrases) {
+    const norm = phraseWords(p.phrase).join(" ");
+    if (!norm || known.has(norm)) continue;
+    known.add(norm);
+    const entry = {
+      id: `${now.getTime().toString(36)}-${state.phrases.length}`,
+      phrase: p.phrase,
+      meaning_es: p.meaning_es,
+      when_to_use_es: p.when_to_use_es,
+      scenario: scenario ?? null,
+      addedAt: now.toISOString(),
+      dueAt: now.toISOString(),
+      intervalDays: 0,
+    };
+    state.phrases.push(entry);
+    added.push(entry);
+  }
+  return added;
+}
+
+export function duePhrases(state, now = new Date()) {
+  return (state.phrases ?? []).filter((p) => isDue(p, now)).sort((a, b) => String(a.dueAt).localeCompare(String(b.dueAt)));
+}
+
+export function reviewPhrase(state, id, answer, now = new Date()) {
+  const p = (state.phrases ?? []).find((x) => x.id === id);
+  if (!p) return null;
+  const result = comparePhrase(p.phrase, answer);
+  p.reviews = (p.reviews ?? 0) + 1;
+  schedule(p, result.score, now);
+  return { ...result, phrase: p };
 }
 
 // Texto compacto con el perfil y el estado del alumno, para dárselo a la IA.

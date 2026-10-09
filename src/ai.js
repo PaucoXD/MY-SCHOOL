@@ -76,7 +76,9 @@ const RUNTIME_LABEL = { javascript: "JavaScript", python: "Python" };
 // `retryReason` explica por qué se descartó un intento anterior (tests incorrectos).
 export function generateExercise({ track, context, focus, review, runtime, retryReason }) {
   const topic = track === "english"
-    ? "inglés (gramática, vocabulario, traducción, comprensión, escritura)"
+    ? `inglés (gramática, vocabulario, traducción, comprensión, escritura). El alumno quiere poder hablar con nativos:
+prioriza el inglés que se usa de verdad (phrasal verbs, expresiones, contracciones, registro coloquial vs. formal,
+cómo reaccionar en conversación) frente al inglés de libro, y usa frases de situaciones reales`
     : "programación (en el lenguaje del perfil: lógica, sintaxis, estructuras de datos, depuración, conceptos)";
   let selection;
   if (focus) {
@@ -216,4 +218,159 @@ export async function chat({ messages, context }) {
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("\n");
+}
+
+// ---------- Conversación con un "nativo" ----------
+
+const LEVEL_STYLE = {
+  A1: "Habla despacio y con frases muy cortas y vocabulario básico, pero que suene natural (contracciones incluidas).",
+  A2: "Frases cortas y vocabulario frecuente, natural, con alguna expresión coloquial muy común.",
+  B1: "Habla como un nativo amable: contracciones, phrasal verbs y expresiones comunes, sin jerga rebuscada.",
+  B2: "Habla como un nativo normal: ritmo natural, phrasal verbs, idioms comunes y algo de slang.",
+  C1: "Habla exactamente como un nativo, con slang, idioms y humor, sin simplificar.",
+  C2: "Habla exactamente como un nativo, con slang, idioms y humor, sin simplificar.",
+};
+
+function conversationSystem({ scenario, accent, level }) {
+  return `${TUTOR_SYSTEM}
+
+Ahora haces un ROLE-PLAY para que el alumno aprenda a hablar con nativos de verdad.
+Personaje: ${scenario.character}
+Situación para el alumno: ${scenario.goal}
+Acento y vocabulario: ${accent} (usa palabras y expresiones típicas de esa variante).
+Nivel del alumno: ${level}. ${LEVEL_STYLE[level] ?? LEVEL_STYLE.B1}
+
+Reglas del personaje:
+- Habla como lo haría esa persona en la vida real, no como un libro de texto: contracciones (gonna, wanna solo si encaja),
+  muletillas naturales (well, so, oh nice, yeah), y respuestas cortas de 1-3 frases como en una conversación hablada.
+- Mantente en el personaje y haz avanzar la situación (preguntas, pequeños imprevistos). Nunca corrijas dentro del personaje.
+- Lo que dices se lee en voz alta: nada de emojis, listas, markdown ni acotaciones.`;
+}
+
+const TURN_SCHEMA = {
+  type: "object",
+  properties: {
+    reply: { type: "string", description: "Lo que dice el personaje, en inglés hablado natural." },
+    reply_es: { type: "string", description: "Traducción natural al español de reply." },
+    feedback: {
+      type: "object",
+      description: "Corrección del ÚLTIMO mensaje del alumno. Si es la apertura (no hay mensaje del alumno), has_issue=false y el resto vacío.",
+      properties: {
+        has_issue: { type: "boolean", description: "true si hay un error o si un nativo lo diría de forma claramente distinta." },
+        type: { type: "string", enum: ["", "gramática", "vocabulario", "naturalidad", "registro", "comprensión"] },
+        native_version: { type: "string", description: "Cómo lo diría un nativo en esta situación (en inglés)." },
+        explanation_es: { type: "string", description: "Explicación breve en español de qué cambia y por qué." },
+        skill: { type: "string", description: "Habilidad concreta implicada, nombre corto en español (p. ej. 'Past simple', 'Phrasal verbs', 'Pedir con cortesía')." },
+      },
+      required: ["has_issue", "type", "native_version", "explanation_es", "skill"],
+      additionalProperties: false,
+    },
+    suggestions: {
+      type: "array",
+      items: { type: "string" },
+      description: "2 respuestas posibles y naturales que el alumno podría decir ahora (en inglés), por si se bloquea.",
+    },
+    goal_completed: { type: "boolean", description: "true si el alumno ya ha conseguido el objetivo de la situación." },
+  },
+  required: ["reply", "reply_es", "feedback", "suggestions", "goal_completed"],
+  additionalProperties: false,
+};
+
+function transcript(messages) {
+  return messages.map((m) => `${m.role === "user" ? "STUDENT" : "YOU (character)"}: ${m.content}`).join("\n");
+}
+
+// `messages`: [{ role: "user" | "assistant", content }] — vacío para que el personaje abra la conversación.
+// El alumno habla por voz, así que su texto viene de un reconocedor de voz: no corrijas mayúsculas ni puntuación.
+export function conversationTurn({ scenario, accent, level, messages }) {
+  const last = messages.at(-1);
+  return structured({
+    system: conversationSystem({ scenario, accent, level }),
+    effort: "low",
+    schema: TURN_SCHEMA,
+    maxTokens: 4000,
+    prompt: messages.length
+      ? `<conversation>
+${transcript(messages)}
+</conversation>
+
+Responde como el personaje al último mensaje del alumno y corrige ese mensaje ("${last.content}").
+El texto del alumno puede venir de reconocimiento de voz: ignora mayúsculas y puntuación, y si una palabra parece
+mal transcrita no lo cuentes como error. Señala solo lo que importa para sonar natural y que te entiendan
+(no cada detalle); si su frase ya suena natural, has_issue=false.`
+      : "Abre la conversación como el personaje (el alumno aún no ha dicho nada).",
+  });
+}
+
+const SUMMARY_SCHEMA = {
+  type: "object",
+  properties: {
+    overall_es: { type: "string", description: "Valoración general en 2-3 frases, en español, honesta y motivadora." },
+    fluency: { type: "integer", description: "0-100: fluidez y capacidad de mantener la conversación." },
+    naturalness: { type: "integer", description: "0-100: cuánto suena como un nativo." },
+    accuracy: { type: "integer", description: "0-100: corrección gramatical y de vocabulario." },
+    strengths: { type: "array", items: { type: "string" } },
+    to_improve: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          skill: { type: "string", description: "Nombre corto en español." },
+          you_said: { type: "string" },
+          native_version: { type: "string" },
+          tip_es: { type: "string" },
+        },
+        required: ["skill", "you_said", "native_version", "tip_es"],
+        additionalProperties: false,
+      },
+    },
+    skills: {
+      type: "array",
+      description: "Habilidades evaluadas en esta conversación con su nota (0-100). Incluye la habilidad de la situación (p. ej. 'Conversación: pedir en una cafetería') y las gramaticales/de vocabulario relevantes.",
+      items: {
+        type: "object",
+        properties: { skill: { type: "string" }, score: { type: "integer" }, mistake: { type: "string", description: "Error concreto si la nota < 70; vacío si no." } },
+        required: ["skill", "score", "mistake"],
+        additionalProperties: false,
+      },
+    },
+    native_phrases: {
+      type: "array",
+      description: "5-8 expresiones de nativo útiles para esta situación (usadas por el personaje o que el alumno debería haber usado).",
+      items: {
+        type: "object",
+        properties: {
+          phrase: { type: "string", description: "La expresión en inglés, tal cual se dice." },
+          meaning_es: { type: "string" },
+          when_to_use_es: { type: "string" },
+        },
+        required: ["phrase", "meaning_es", "when_to_use_es"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["overall_es", "fluency", "naturalness", "accuracy", "strengths", "to_improve", "skills", "native_phrases"],
+  additionalProperties: false,
+};
+
+export function conversationSummary({ scenario, accent, level, messages, context }) {
+  return structured({
+    system: TUTOR_SYSTEM,
+    effort: "medium",
+    schema: SUMMARY_SCHEMA,
+    prompt: `El alumno acaba de practicar una conversación hablada (role-play) para aprender a hablar con nativos.
+Situación: ${scenario.title} — objetivo: ${scenario.goal}
+Acento: ${accent}. Nivel declarado: ${level}.
+El texto del alumno viene de reconocimiento de voz: no penalices puntuación, mayúsculas ni palabras mal transcritas.
+
+<learner>
+${context}
+</learner>
+
+<conversation>
+${transcript(messages)}
+</conversation>
+
+Evalúa la conversación. Usa en "skills" nombres de habilidad que ya existan en su progreso cuando sea la misma habilidad.`,
+  });
 }

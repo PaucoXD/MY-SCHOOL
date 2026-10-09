@@ -1,10 +1,21 @@
 # MY-SCHOOL
 
-App web para aprender **inglés** y **programación** con un tutor IA (Claude) que sigue tu progreso,
-detecta qué te falla y adapta los ejercicios a tus puntos débiles.
+App web para aprender **inglés que puedas usar con nativos** y **programación**, con un tutor IA (Claude) que sigue
+tu progreso, detecta qué te falla y adapta los ejercicios a tus puntos débiles. Se puede instalar en el móvil.
 
 ## Qué hace
 
+- **🎙️ Conversar con nativos**: role-plays por voz en situaciones reales (cafetería, small talk, hacer amigos,
+  restaurante, médico, llamada a atención al cliente, entrevista de trabajo, stand-up de un equipo de desarrollo...).
+  - La IA hace de nativo: habla como en la vida real (contracciones, phrasal verbs, expresiones) adaptándose a tu nivel,
+    con acento americano, británico o australiano, y te responde en voz alta.
+  - Tú hablas con el micrófono (o escribes). Debajo de cada frase tuya ves **cómo lo diría un nativo** y por qué.
+  - Herramientas: repetir o escuchar más lento, traducción, ideas de qué decir (💡) y un *modo escucha* que oculta
+    el texto para entrenar el oído.
+  - Al terminar: notas de fluidez, naturalidad y corrección, qué mejorar y expresiones de nativo para esa situación.
+    Las notas cuentan en tu progreso de inglés (y en la repetición espaciada).
+- **📒 Frases de nativo**: las expresiones de tus conversaciones se guardan en una libreta con repetición espaciada.
+  Ves el significado y tienes que **decirla en voz alta** (o escribirla); se compara palabra por palabra.
 - **Practicar**: la IA genera un ejercicio cada vez (opción múltiple, traducción, rellenar huecos, escribir código,
   predecir la salida, arreglar un bug...). *Siguiente ejercicio* empieza por tus repasos pendientes y, cuando no quedan,
   te enseña algo nuevo. *Aprender algo nuevo* salta los repasos. También puedes pedir un tema concreto.
@@ -38,6 +49,26 @@ Cada respuesta corregida actualiza la habilidad practicada (`src/progress.js`):
 
 Los datos se guardan en `data/progress.json` (local, no se sube a git).
 
+## Voz y uso en el móvil
+
+La voz usa las APIs del navegador (sin coste extra):
+
+- **Hablar (reconocimiento de voz)** funciona en Chrome, Edge y Safari, no en Firefox (ahí puedes escribir).
+  El navegador solo deja usar el micrófono en `https://` o en `localhost`.
+- **Escuchar (voz del nativo)** funciona en todos. La calidad depende de las voces instaladas: en Chrome y Edge
+  suelen sonar mejor las que se llaman "Google" o "Natural".
+- El reconocimiento de voz transcribe lo que dices; no evalúa tu pronunciación sonido a sonido. Si te entiende,
+  un nativo probablemente también.
+
+Para usarla en el **móvil** (se puede instalar: "Añadir a pantalla de inicio"):
+
+- **En tu Wi-Fi**: abre `http://IP-de-tu-ordenador:3000`. Funciona todo menos el micrófono, porque no es https.
+- **Con micrófono**: publícala con https. Por ejemplo, un túnel temporal (`cloudflared tunnel --url http://localhost:3000`)
+  o un hosting de Node (Render, Railway, Fly.io...).
+
+  **Si la publicas, pon siempre `APP_PASSWORD` en el `.env`**: si no, cualquiera con la URL podría gastar tu clave de
+  la API y ejecutar código en tu servidor.
+
 ## Puesta en marcha
 
 Requisitos: Node.js 22 o superior y una clave de la API de Claude (https://console.anthropic.com).
@@ -57,8 +88,9 @@ src/server.js     API Express (ejercicios, respuestas, progreso, análisis, chat
 src/ai.js         Llamadas a Claude con salidas JSON estructuradas
 src/progress.js   Cálculo del dominio por habilidad y almacenamiento
 src/runner.js     Ejecución del código con tests (JavaScript y Python) en un proceso aparte
-public/           Interfaz web (HTML, CSS y JS sin build)
-test/             Tests del progreso y del ejecutor de código
+src/scenarios.js  Situaciones de conversación con nativos
+public/           Interfaz web (HTML, CSS y JS sin build); speech.js = voz, conversation.js = Conversar
+test/             Tests del progreso, la libreta de frases y el ejecutor de código
 ```
 
 Usa el modelo `claude-opus-5-5` por defecto (cámbialo con `CLAUDE_MODEL`). Tiene activado el *fallback* del servidor:
@@ -78,5 +110,6 @@ ejecución en un sandbox de verdad (un contenedor, por ejemplo).
 ## Ideas para seguir
 
 - Más lenguajes con tests (TypeScript, Java...) y ejecución en contenedor para poder publicar la app.
-- Práctica oral de inglés (voz a texto) y lecturas con preguntas de comprensión.
+- Evaluación real de pronunciación (por fonemas) y lecturas o vídeos con preguntas de comprensión.
+- Situaciones personalizadas (escribes la tuya) y conversaciones en las que el nativo habla más rápido con el tiempo.
 - Varios usuarios con login y base de datos.

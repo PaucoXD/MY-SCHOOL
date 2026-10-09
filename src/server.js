@@ -3,8 +3,11 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { Store, TRACKS, dueSkills, skillKey, learnerContext, recordAttempt, trackSummary, skillsForTrack } from "./progress.js";
-import { AIError, analyzeProgress, chat, generateExercise, gradeAnswer } from "./ai.js";
+import {
+  Store, TRACKS, addPhrases, duePhrases, dueSkills, skillKey, learnerContext, recordAttempt, reviewPhrase, trackSummary, skillsForTrack,
+} from "./progress.js";
+import { AIError, analyzeProgress, chat, conversationSummary, conversationTurn, generateExercise, gradeAnswer } from "./ai.js";
+import { ACCENTS, SCENARIOS, findScenario } from "./scenarios.js";
 import { runTests, runtimeFor, validFunctionName } from "./runner.js";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -13,6 +16,20 @@ const store = new Store(process.env.DATA_FILE || path.join(root, "data", "progre
 const pending = new Map();
 
 const app = express();
+
+// Si publicas la app en internet, pon APP_PASSWORD para que nadie más use tu clave de la API
+// ni ejecute código en tu servidor. El navegador pedirá usuario (cualquiera) y contraseña.
+const password = process.env.APP_PASSWORD;
+if (password) {
+  const expected = crypto.createHash("sha256").update(password).digest();
+  app.use((req, res, next) => {
+    const [scheme, encoded] = (req.headers.authorization ?? "").split(" ");
+    const given = scheme === "Basic" ? Buffer.from(encoded ?? "", "base64").toString().split(":").slice(1).join(":") : "";
+    if (crypto.timingSafeEqual(crypto.createHash("sha256").update(given).digest(), expected)) return next();
+    res.set("WWW-Authenticate", 'Basic realm="MY-SCHOOL", charset="UTF-8"').status(401).send("Contraseña necesaria");
+  });
+}
+
 app.use(express.json({ limit: "200kb" }));
 app.use(express.static(path.join(root, "public")));
 
@@ -190,17 +207,81 @@ app.post("/api/insights", async (req, res, next) => {
   }
 });
 
-app.post("/api/chat", async (req, res, next) => {
-  const messages = Array.isArray(req.body?.messages) ? req.body.messages.slice(-30) : [];
-  const clean = messages
-    .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
+// Historial que llega del navegador → solo mensajes user/assistant con texto.
+function cleanMessages(messages, limit = 30) {
+  return (Array.isArray(messages) ? messages.slice(-limit) : [])
+    .filter((m) => (m?.role === "user" || m?.role === "assistant") && typeof m.content === "string" && m.content.trim())
     .map((m) => ({ role: m.role, content: m.content.slice(0, 10000) }));
+}
+
+app.post("/api/chat", async (req, res, next) => {
+  const clean = cleanMessages(req.body?.messages);
   if (clean.at(-1)?.role !== "user") return res.status(400).json({ error: "Falta tu mensaje." });
   try {
     res.json({ reply: await chat({ messages: clean, context: learnerContext(store.state) }) });
   } catch (err) {
     next(err);
   }
+});
+
+// ---------- Conversación con nativos ----------
+
+app.get("/api/scenarios", (req, res) => {
+  res.json({ scenarios: SCENARIOS.map(({ id, emoji, title, goal }) => ({ id, emoji, title, goal })), accents: ACCENTS });
+});
+
+function conversationParams(req, res) {
+  const scenario = findScenario(req.body?.scenarioId);
+  if (!scenario) {
+    res.status(400).json({ error: "Situación no válida." });
+    return null;
+  }
+  const accent = ACCENTS[req.body.accent] ?? ACCENTS.us;
+  return { scenario, accent, level: store.state.profile.englishLevel, messages: cleanMessages(req.body.messages, 60) };
+}
+
+app.post("/api/conversation/turn", async (req, res, next) => {
+  const params = conversationParams(req, res);
+  if (!params) return;
+  if (params.messages.length && params.messages.at(-1).role !== "user") return res.status(400).json({ error: "Falta tu mensaje." });
+  try {
+    res.json(await conversationTurn(params));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post("/api/conversation/end", async (req, res, next) => {
+  const params = conversationParams(req, res);
+  if (!params) return;
+  if (params.messages.filter((m) => m.role === "user").length < 2) {
+    return res.status(400).json({ error: "Habla un poco más (al menos 2 intervenciones) para poder evaluarte." });
+  }
+  try {
+    const summary = await conversationSummary({ ...params, context: learnerContext(store.state, "english") });
+    for (const s of summary.skills) {
+      recordAttempt(store.state, { track: "english", skill: s.skill, score: Math.max(0, Math.min(100, s.score)), mistake: s.mistake });
+    }
+    const added = addPhrases(store.state, summary.native_phrases, { scenario: params.scenario.id });
+    store.save();
+    res.json({ ...summary, phrasesAdded: added.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/api/phrases", (req, res) => {
+  const all = store.state.phrases ?? [];
+  res.json({ total: all.length, due: duePhrases(store.state) });
+});
+
+app.post("/api/phrases/review", (req, res) => {
+  const answer = String(req.body?.answer ?? "").slice(0, 1000);
+  if (!answer.trim()) return res.status(400).json({ error: "Di o escribe la frase." });
+  const result = reviewPhrase(store.state, req.body?.id, answer);
+  if (!result) return res.status(404).json({ error: "Frase no encontrada." });
+  store.save();
+  res.json(result);
 });
 
 app.use((err, req, res, _next) => {

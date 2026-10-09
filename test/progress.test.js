@@ -82,3 +82,32 @@ test("dueSkills devuelve solo lo pendiente, lo más débil primero", () => {
 test("habilidades guardadas antes de la repetición espaciada cuentan como pendientes", () => {
   assert.ok(isDue({ mastery: 80 }));
 });
+
+import { comparePhrase, addPhrases, duePhrases, reviewPhrase } from "../src/progress.js";
+
+test("comparePhrase ignora puntuación, mayúsculas y contracciones", () => {
+  assert.equal(comparePhrase("Could I get a latte to go?", "could i get a latte to go").score, 100);
+  assert.equal(comparePhrase("I'm gonna grab a coffee", "I am going to grab a coffee").score, 100);
+  assert.equal(comparePhrase("I'm gonna grab a coffee", "im going to grab a coffee").score, 100);
+  const r = comparePhrase("Hang a left at the lights", "turn left at the light");
+  assert.ok(r.score < 70);
+  assert.deepEqual(r.words.filter((w) => !w.ok).map((w) => w.word), ["hang", "a", "lights"]);
+  assert.equal(comparePhrase("Hello there", "").score, 0);
+});
+
+test("la libreta no duplica frases y las programa para repaso", () => {
+  const s = emptyState();
+  const now = at(0);
+  const added = addPhrases(s, [
+    { phrase: "No worries!", meaning_es: "No pasa nada", when_to_use_es: "Al quitar importancia" },
+    { phrase: "no worries", meaning_es: "dup", when_to_use_es: "" },
+    { phrase: "I'm good, thanks", meaning_es: "Estoy bien", when_to_use_es: "Al responder" },
+  ], { scenario: "coffee" }, now);
+  assert.equal(added.length, 2);
+  assert.equal(duePhrases(s, now).length, 2);
+  const r = reviewPhrase(s, added[0].id, "no worries", now);
+  assert.equal(r.score, 100);
+  assert.equal(duePhrases(s, now).length, 1);
+  assert.equal(duePhrases(s, at(1)).length, 2);
+  assert.equal(reviewPhrase(s, "no-existe", "x", now), null);
+});
