@@ -3,145 +3,220 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: app de una columna; barra de pestañas abajo en el móvil, arriba en pantallas anchas. */
+/* Layout: una columna pensada para el pulgar. Inicio con racha y meta del día; las lecciones y conversaciones
+   ocupan la pantalla entera con el botón principal fijo abajo. Pestañas abajo en el móvil, arriba en pantallas anchas. */
 :root {
-  --bg: #eef2f1;
+  --bg: #eef3f1;
   --surface: #ffffff;
-  --sunk: #e3e9e7;
-  --ink: #14211f;
-  --muted: #586764;
-  --line: #cfd9d6;
-  --accent: #0b6e63;
+  --sunk: #e2eae7;
+  --ink: #13211e;
+  --muted: #5a6b67;
+  --line: #d0dbd7;
+  --accent: #0b7a6c;
   --accent-ink: #ffffff;
-  --accent-soft: #d3ebe6;
-  --spark: #c2410c;
+  --accent-soft: #d2eee8;
+  --flame: #ea580c;
+  --flame-soft: #ffe8d9;
+  --gold: #b7791f;
   --good: #15803d;
+  --good-soft: #dcf5e4;
   --mid: #b45309;
+  --mid-soft: #fdf0d8;
   --bad: #c2262b;
+  --bad-soft: #fde2e2;
   --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
-  --r: 14px;
-  --tabbar: 64px;
+  --r: 18px;
+  --tabbar: 66px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f1716; --surface: #172220; --sunk: #1f2c2a; --ink: #e4eeeb; --muted: #97a8a4; --line: #2c3c39;
-    --accent: #3fbfaf; --accent-ink: #062320; --accent-soft: #163c37; --spark: #fb8a4a;
-    --good: #4ade80; --mid: #fbbf24; --bad: #f87171; color-scheme: dark;
+    --bg: #0e1715; --surface: #16221f; --sunk: #1f2d2a; --ink: #e6efec; --muted: #9aaba6; --line: #2b3b37;
+    --accent: #3cc4b2; --accent-ink: #052520; --accent-soft: #143e38; --flame: #fb8b4b; --flame-soft: #3d2416; --gold: #f2c35b;
+    --good: #4ade80; --good-soft: #143222; --mid: #fbbf24; --mid-soft: #382a10; --bad: #f87171; --bad-soft: #3b1a1b; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0f1716; --surface: #172220; --sunk: #1f2c2a; --ink: #e4eeeb; --muted: #97a8a4; --line: #2c3c39;
-  --accent: #3fbfaf; --accent-ink: #062320; --accent-soft: #163c37; --spark: #fb8a4a;
-  --good: #4ade80; --mid: #fbbf24; --bad: #f87171; color-scheme: dark;
+  --bg: #0e1715; --surface: #16221f; --sunk: #1f2d2a; --ink: #e6efec; --muted: #9aaba6; --line: #2b3b37;
+  --accent: #3cc4b2; --accent-ink: #052520; --accent-soft: #143e38; --flame: #fb8b4b; --flame-soft: #3d2416; --gold: #f2c35b;
+  --good: #4ade80; --good-soft: #143222; --mid: #fbbf24; --mid-soft: #382a10; --bad: #f87171; --bad-soft: #3b1a1b; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { background: var(--bg); color: var(--ink); }
-body { font: 17px/1.55 var(--f-body); }
+body { font: 18px/1.5 var(--f-body); -webkit-tap-highlight-color: transparent; }
 button, input, select, textarea { font: inherit; color: inherit; }
-h1, h2, h3, h4 { font-family: var(--f-display); line-height: 1.15; margin: 0; text-wrap: balance; }
-h2 { font-size: 1.5rem; font-weight: 800; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.01em; }
 h3 { font-size: 1.15rem; font-weight: 600; }
 p { margin: 0; }
-code, pre, .mono { font-family: var(--f-mono); font-size: 0.86em; }
-code { background: var(--sunk); padding: 1px 5px; border-radius: 5px; }
-pre { background: var(--sunk); padding: 12px; border-radius: 10px; overflow-x: auto; margin: 0; }
+code, pre, .mono { font-family: var(--f-mono); font-size: 0.85em; }
+code { background: var(--sunk); padding: 1px 6px; border-radius: 6px; }
+pre { background: var(--sunk); padding: 12px 14px; border-radius: 12px; overflow-x: auto; margin: 0; }
 pre code { background: none; padding: 0; }
-:focus-visible { outline: 3px solid var(--spark); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--flame); outline-offset: 2px; }
+[hidden] { display: none !important; }
 
-.app { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 12px calc(var(--tabbar) + 24px); display: flex; flex-direction: column; gap: 16px; }
-header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.brand { display: flex; align-items: baseline; gap: 8px; }
-.brand h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
+.app { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 10px calc(var(--tabbar) + 28px); display: flex; flex-direction: column; gap: 14px; }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
 .brand h1 span { color: var(--accent); }
-.save-state { font-size: 0.8rem; color: var(--muted); }
+.top-right { display: flex; align-items: center; gap: 8px; }
+.streak-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--flame-soft); color: var(--flame); font-weight: 700; border-radius: 999px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
+.streak-chip.off { background: var(--sunk); color: var(--muted); }
+.icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; }
+.icon-btn svg { width: 22px; height: 22px; }
 
-nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(5, 1fr);
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, 1fr);
   background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-nav.tabs button { border: 0; background: none; padding: 8px 2px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  font-size: 0.72rem; color: var(--muted); cursor: pointer; min-height: var(--tabbar); }
-nav.tabs button svg { width: 22px; height: 22px; }
+nav.tabs button { border: 0; background: none; min-height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 0.74rem; color: var(--muted); cursor: pointer; }
+nav.tabs svg { width: 25px; height: 25px; }
 nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 700; }
+nav.tabs button[aria-selected="true"] svg { stroke-width: 2.4; }
 @media (min-width: 760px) {
-  nav.tabs { position: static; border: 1px solid var(--line); border-radius: 999px; padding: 4px; display: flex; gap: 2px; }
-  nav.tabs button { flex-direction: row; min-height: 0; padding: 7px 14px; font-size: 0.9rem; border-radius: 999px; gap: 6px; }
-  nav.tabs button svg { width: 17px; height: 17px; }
+  nav.tabs { position: sticky; top: 0; max-width: 720px; margin: 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 4px; display: flex; gap: 2px; }
+  nav.tabs button { flex: 1; flex-direction: row; min-height: 0; padding: 8px 12px; font-size: 0.95rem; border-radius: 999px; gap: 6px; }
+  nav.tabs svg { width: 18px; height: 18px; }
   nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
-  .app { padding-block: 16px 32px; }
+  .app { padding-block: 16px 40px; }
 }
+body.focus nav.tabs, body.focus header.top { display: none; }
+body.focus .app { padding-bottom: 16px; }
 
 .view { display: flex; flex-direction: column; gap: 14px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.muted { color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--muted); font-size: 0.92rem; }
 .eyebrow { font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.grow { flex: 1 1 200px; min-width: 0; }
-.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 9px 16px; cursor: pointer; font-weight: 700; }
-.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); font-weight: 400; }
-.btn.small { padding: 4px 10px; font-size: 0.85rem; }
-.btn:disabled { opacity: 0.55; cursor: progress; }
-input[type=text], textarea, select { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.grow { flex: 1 1 180px; min-width: 0; }
+.btn { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 12px 18px; min-height: 50px; cursor: pointer; font-weight: 700; font-size: 1rem;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); transition: transform 0.06s; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 3px 0 var(--line); font-weight: 600; }
+.btn.small { min-height: 38px; padding: 6px 12px; font-size: 0.9rem; }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+.link { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; padding: 6px 0; font-size: 0.95rem; }
+input[type=text], textarea, select { width: 100%; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 11px 14px; font-size: 1rem; }
+input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; }
 textarea { resize: vertical; }
-label.field { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 0.92rem; }
+label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 0.95rem; }
 label.field span.muted { font-weight: 400; }
-.seg { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 3px; gap: 2px; }
-.seg button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 4px; gap: 2px; align-self: flex-start; }
+.seg button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--surface); font-weight: 700; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
-.chip { display: inline-block; font-size: 0.78rem; padding: 2px 9px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.chip { display: inline-block; font-size: 0.8rem; padding: 3px 10px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
 .chip.accent { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
-.notice { border-left: 4px solid var(--spark); background: var(--surface); padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 0.92rem; }
+.chip.flame { background: var(--flame-soft); color: var(--flame); font-weight: 700; }
+.notice { border-left: 4px solid var(--flame); background: var(--surface); padding: 10px 14px; border-radius: 0 12px 12px 0; font-size: 0.92rem; }
 .error { color: var(--bad); }
 .thinking { color: var(--muted); font-style: italic; }
 .thinking::after { content: "…"; animation: dots 1.2s steps(3) infinite; }
 @keyframes dots { 0% { content: ""; } 33% { content: "."; } 66% { content: ".."; } }
+.md { display: flex; flex-direction: column; gap: 8px; }
+.md ul, .md ol { padding-left: 22px; margin: 0; }
+.meter { height: 10px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
 
-.lesson { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+/* Inicio */
+.today { flex-direction: row; align-items: center; gap: 16px; }
+.ring { width: 92px; height: 92px; flex: none; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .track { stroke: var(--sunk); }
+.ring .fill { stroke: var(--flame); transition: stroke-dashoffset 0.6s ease; }
+.ring b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.today-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.today-text h2 { font-size: 1.3rem; }
+.week { display: flex; gap: 6px; margin-top: 4px; }
+.week span { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 0.72rem; font-weight: 700; background: var(--sunk); color: var(--muted); }
+.week span.on { background: var(--flame); color: #fff; }
+.week span.today { outline: 2px solid var(--flame); outline-offset: 1px; }
+.track-card { gap: 10px; }
+.track-head { display: flex; align-items: center; gap: 12px; }
+.badge { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; flex: none; font-family: var(--f-display); font-weight: 800; font-size: 1.1rem; }
+.badge.en { background: var(--accent-soft); color: var(--accent); }
+.badge.code { background: var(--flame-soft); color: var(--flame); font-family: var(--f-mono); font-size: 1rem; }
+.track-head h3 { font-size: 1.25rem; }
+.topic-row { display: flex; gap: 8px; }
+.topic-row input { flex: 1; min-width: 0; }
+.action { flex-direction: row; align-items: center; gap: 12px; text-align: left; cursor: pointer; font: inherit; }
+.action .badge { width: 46px; height: 46px; font-size: 1.4rem; }
+.action div { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.action .go { color: var(--muted); font-size: 1.4rem; }
+
+/* Lección a pantalla completa */
+.session { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.session-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; max-width: 720px; width: 100%; margin: 0 auto; }
+.session-top .close { width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; font-size: 1.4rem; color: var(--muted); cursor: pointer; flex: none; }
+.session-top .close.confirm { width: auto; padding: 0 12px; background: var(--bad-soft); color: var(--bad); font-size: 0.85rem; font-weight: 700; border-radius: 999px; }
+.pbar { flex: 1; height: 14px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.pbar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+.session-body { flex: 1; overflow-y: auto; padding-inline: 16px; padding-block: 8px 24px; }
+.session-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.session-inner.graded { padding-bottom: 45vh; }
+.session-foot { border-top: 1px solid var(--line); background: var(--surface); padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
+.foot-inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.foot-inner .row .btn { flex: 1 1 0; }
+.session-foot.good { background: var(--good-soft); border-color: transparent; }
+.session-foot.mid { background: var(--mid-soft); border-color: transparent; }
+.session-foot.bad { background: var(--bad-soft); border-color: transparent; }
+.verdict { font-family: var(--f-display); font-size: 1.45rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.good .verdict { color: var(--good); } .mid .verdict { color: var(--mid); } .bad .verdict { color: var(--bad); }
+.good .btn { background: var(--good); box-shadow: 0 3px 0 color-mix(in srgb, var(--good) 60%, #000); color: #fff; }
+.bad .btn { background: var(--bad); box-shadow: 0 3px 0 color-mix(in srgb, var(--bad) 60%, #000); color: #fff; }
+.mid .btn { background: var(--mid); box-shadow: 0 3px 0 color-mix(in srgb, var(--mid) 60%, #000); color: #fff; }
+.xp-pop { font-weight: 700; color: var(--gold); font-size: 0.95rem; }
+.lesson { background: var(--accent-soft); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .lesson pre { background: var(--surface); }
-.levels { display: flex; flex-direction: column; gap: 8px; }
-.levels .row button { flex: 1 1 140px; }
-.options { display: flex; flex-direction: column; gap: 6px; }
-.options label { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.question { font-family: var(--f-display); font-size: 1.35rem; font-weight: 700; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.options label { border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; cursor: pointer; background: var(--surface); font-size: 1.05rem; }
+.options input { position: absolute; opacity: 0; pointer-events: none; }
 .options label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.code-editor { font-family: var(--f-mono); font-size: 0.88rem; white-space: pre; tab-size: 2; background: var(--sunk); }
-.verdict { font-family: var(--f-display); font-size: 1.3rem; font-weight: 800; }
-.v-correcto { color: var(--good); } .v-casi { color: var(--mid); } .v-incorrecto { color: var(--bad); }
-.tests { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
-.test-run { border: 1px solid var(--line); border-left: 4px solid var(--bad); border-radius: 0 10px 10px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.options label:has(input:focus-visible) { outline: 3px solid var(--flame); }
+.opt-key { width: 30px; height: 30px; border-radius: 9px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; color: var(--muted); flex: none; }
+.options label:has(input:checked) .opt-key { border-color: var(--accent); color: var(--accent); }
+.code-editor { font-family: var(--f-mono); font-size: 0.9rem; white-space: pre; tab-size: 2; background: var(--sunk); }
+.tests { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 0.92rem; }
+.test-run { border: 1px solid var(--line); border-left: 5px solid var(--bad); border-radius: 0 12px 12px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
 .test-run.ok { border-left-color: var(--good); }
-.md p + p, .md ul, .md ol, .md pre { margin-top: 8px; }
-.md ul, .md ol { padding-left: 20px; margin-bottom: 0; }
+.levels { display: flex; flex-direction: column; gap: 10px; }
+.levels .btn { text-align: left; }
+.finish { align-items: center; text-align: center; gap: 16px; padding-top: 24px; }
+.finish .trophy { width: 110px; height: 110px; border-radius: 50%; background: var(--flame-soft); display: grid; place-items: center; font-size: 3.4rem; animation: pop 0.5s ease-out; }
+@keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.finish-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
 
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+/* Progreso y conversación */
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
 .stat b { display: block; font-family: var(--f-display); font-size: 1.7rem; font-variant-numeric: tabular-nums; }
-.skill { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.skill { display: flex; flex-direction: column; gap: 5px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .skill:last-child { border-bottom: 0; }
 .skill-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.meter { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
-.meter i { display: block; height: 100%; border-radius: 99px; }
 .skill ul { margin: 2px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.88rem; }
-
-.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-.scenario { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
-.scenario:hover { border-color: var(--accent); }
-.scenario b { font-family: var(--f-display); font-weight: 600; }
-.scenario span { color: var(--muted); font-size: 0.86rem; }
+.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.scenario { text-align: left; background: var(--surface); border: 1px solid var(--line); border-bottom-width: 4px; border-radius: 16px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.scenario:active { transform: translateY(2px); }
+.scenario .emo { font-size: 1.8rem; line-height: 1; }
+.scenario b { font-family: var(--f-display); font-weight: 600; font-size: 1rem; line-height: 1.2; }
 .log { display: flex; flex-direction: column; gap: 8px; }
-.bubble { max-width: 88%; padding: 10px 14px; border-radius: 16px; display: flex; flex-direction: column; gap: 6px; }
+.bubble { max-width: 88%; padding: 11px 15px; border-radius: 18px; display: flex; flex-direction: column; gap: 6px; }
 .bubble.them { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 4px; align-self: flex-start; }
 .bubble.me { background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; align-self: flex-end; }
-.bubble .tr { color: var(--muted); font-size: 0.88rem; }
+.bubble .tr { color: var(--muted); font-size: 0.9rem; }
 .blur { filter: blur(6px); cursor: pointer; user-select: none; }
 .tools { display: flex; gap: 6px; flex-wrap: wrap; }
-.tools button, .say { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 2px 9px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
-.fb { align-self: flex-end; max-width: 88%; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 8px 12px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
+.tools button, .say { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 10px; font-size: 0.82rem; color: var(--muted); cursor: pointer; }
+.fb { align-self: flex-end; max-width: 88%; background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; padding: 8px 12px; font-size: 0.92rem; display: flex; flex-direction: column; gap: 4px; }
 .fb.ok { border-style: solid; color: var(--good); }
-.fb b { color: var(--spark); }
-.composer { position: sticky; bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding-block: 8px; display: flex; gap: 8px; align-items: center; }
-@media (min-width: 760px) { .composer { bottom: 0; } }
+.fb b { color: var(--flame); }
+.composer { position: sticky; bottom: 0; background: var(--bg); padding-block: 8px calc(8px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: center; }
 .composer input { flex: 1; min-width: 0; }
-.mic { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--accent); background: var(--accent-soft); cursor: pointer; flex: none; font-size: 1.2rem; }
+.composer.above-tabs { bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 760px) { .composer.above-tabs { bottom: 0; } }
+.composer .btn { min-height: 48px; }
+.mic { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-soft); cursor: pointer; flex: none; font-size: 1.2rem; }
 .mic.on { background: var(--bad); border-color: var(--bad); }
 .scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .words span { display: inline-block; margin: 2px 4px 2px 0; padding: 1px 7px; border-radius: 6px; }
@@ -149,90 +224,84 @@ label.field span.muted { font-weight: 400; }
 .words .miss { color: var(--bad); text-decoration: underline wavy var(--bad); }
 .chatlog { display: flex; flex-direction: column; gap: 8px; }
 .chatlog .bubble.them { max-width: 100%; }
-[hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; content: "…"; } }
+.back { align-self: flex-start; }
+@media (prefers-reduced-motion: reduce) {
+  .thinking::after { animation: none; content: "…"; }
+  .finish .trophy { animation: none; }
+  .pbar i, .ring .fill, .btn { transition: none; }
+}
 </style>
 
 <div class="app">
   <header class="top">
-    <div class="brand"><h1>MY<span>·</span>SCHOOL</h1><span class="save-state" id="save-state">Guardando en este navegador</span></div>
-    <nav class="tabs" role="tablist" aria-label="Secciones">
-      <button role="tab" data-view="practice" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 7h6M8 11h8"/></svg>Practicar</button>
-      <button role="tab" data-view="talk" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v10H9l-5 4z"/></svg>Conversar</button>
-      <button role="tab" data-view="progress" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progreso</button>
-      <button role="tab" data-view="tutor" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Tutor</button>
-      <button role="tab" data-view="profile" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Perfil</button>
-    </nav>
+    <div class="brand"><h1>MY<span>·</span>SCHOOL</h1></div>
+    <div class="top-right">
+      <span class="streak-chip off" id="streak-chip" title="Días seguidos practicando">🔥 0</span>
+      <button class="icon-btn" id="open-profile" aria-label="Perfil y ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    </div>
   </header>
 
-  <p class="notice" id="no-claude" hidden>Esta página necesita abrirse en claude.ai con tu cuenta para que la IA funcione. Tu progreso se ve igualmente.</p>
+  <p class="notice" id="no-claude" hidden>Abre esta página en claude.ai con tu cuenta para que funcione la IA.</p>
 
-  <!-- PRACTICAR -->
-  <section class="view" id="view-practice">
-    <div class="row">
-      <div class="seg" role="group" aria-label="Materia">
-        <button data-track="english" aria-pressed="true">Inglés</button>
-        <button data-track="programming" aria-pressed="false">Programación</button>
+  <!-- INICIO -->
+  <section class="view" id="view-home">
+    <div class="card today">
+      <div class="ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42" fill="none" stroke-width="12"/><circle class="fill" id="ring-fill" cx="50" cy="50" r="42" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
+        <b id="ring-pct">0%</b>
+      </div>
+      <div class="today-text">
+        <h2 id="today-title">Meta de hoy</h2>
+        <p class="muted" id="today-xp">0 de 50 puntos</p>
+        <div class="week" id="week"></div>
       </div>
     </div>
-    <div class="muted" id="due-banner"></div>
-    <form class="row" id="new-ex">
-      <input type="text" id="focus" class="grow" placeholder="Opcional: un tema concreto (p. ej. phrasal verbs, arrays)">
-      <button class="btn" type="submit" value="auto">Siguiente ejercicio</button>
-      <button class="btn ghost" type="submit" value="new">Algo nuevo</button>
-    </form>
-    <div class="card" id="exercise">
-      <span class="eyebrow">Cómo funciona</span>
-      <h3>La IA elige cada ejercicio según lo que te falla</h3>
-      <p class="muted">Primero repasas lo que toca (repetición espaciada) y después aprendes cosas nuevas. Cada corrección actualiza tu dominio de esa habilidad.</p>
-      <p class="muted">Ejemplo de ejercicio de inglés: <em>«Di de forma natural: "¿Te importa si me siento aquí?"»</em>, con respuesta modelo <code>Mind if I sit here?</code></p>
-    </div>
-    <div class="card" id="result" hidden></div>
+    <div id="track-cards" class="view"></div>
+    <button class="card action" id="home-talk"><span class="badge en">🗣️</span><div><b>Habla con un nativo</b><span class="muted">Conversaciones reales con voz</span></div><span class="go">›</span></button>
+    <button class="card action" id="home-phrases" hidden><span class="badge code">📒</span><div><b>Frases de nativo</b><span class="muted" id="home-phrases-n"></span></div><span class="go">›</span></button>
   </section>
 
   <!-- CONVERSAR -->
   <section class="view" id="view-talk" hidden>
     <div id="talk-setup" class="view">
-      <div>
-        <h2>Habla con un nativo</h2>
-        <p class="muted">Elige una situación. El nativo te responde en voz alta y bajo cada frase tuya ves cómo lo diría él.</p>
-      </div>
+      <h2>¿Dónde estás hoy?</h2>
       <div class="scenarios" id="scenarios"></div>
-      <div class="card">
+      <details class="card">
+        <summary class="muted">Ajustes de voz</summary>
         <div class="row">
           <label class="field grow">Acento
             <select id="accent"><option value="us">Americano</option><option value="uk">Británico</option><option value="au">Australiano</option></select>
           </label>
-          <label class="field grow">Velocidad de la voz
+          <label class="field grow">Velocidad
             <select id="rate"><option value="0.85">Más lenta</option><option value="1" selected>Normal</option><option value="1.12">Rápida</option></select>
           </label>
         </div>
-        <label class="row"><input type="checkbox" id="listen-mode"> Modo escucha: ocultar el texto del nativo hasta que lo toques</label>
-      </div>
-      <div class="card">
-        <span class="eyebrow">Libreta</span>
-        <h3>Frases de nativo</h3>
-        <p class="muted" id="phrase-status">Las expresiones útiles de tus conversaciones se guardan aquí para repasarlas.</p>
-        <div class="row"><button class="btn" id="phrase-start" hidden>Repasar frases</button></div>
+        <label class="row"><input type="checkbox" id="listen-mode"> Modo escucha: ocultar el texto del nativo</label>
+      </details>
+      <div class="card" id="phrase-box">
+        <h3>📒 Frases de nativo</h3>
+        <p class="muted" id="phrase-status">Aquí se guardan las expresiones útiles de tus conversaciones.</p>
+        <button class="btn" id="phrase-start" hidden>Repasar frases</button>
         <div id="phrase-card" class="view"></div>
       </div>
     </div>
 
     <div id="talk-session" class="view" hidden>
-      <div class="row" style="justify-content: space-between; align-items: flex-start">
-        <div class="grow"><h3 id="talk-title"></h3><p class="muted" id="talk-goal"></p></div>
-        <div class="row"><button class="btn ghost" id="talk-exit">Salir</button><button class="btn" id="talk-end">Terminar y evaluar</button></div>
+      <div class="row" style="justify-content: space-between; flex-wrap: nowrap">
+        <button class="btn ghost small" id="talk-exit">✕ Salir</button>
+        <button class="btn small" id="talk-end">Terminar</button>
       </div>
-      <p class="notice" id="goal-done" hidden>¡Objetivo conseguido! Puedes seguir hablando o terminar para ver tu evaluación.</p>
+      <div><h3 id="talk-title"></h3><p class="muted" id="talk-goal"></p></div>
+      <p class="notice" id="goal-done" hidden>🎯 ¡Objetivo conseguido! Sigue o pulsa Terminar.</p>
       <div class="log" id="talk-log"></div>
       <div class="row" id="suggestions" hidden></div>
+      <p class="muted" id="talk-status">Toca el 🎤 de tu teclado para dictar en inglés.</p>
       <form class="composer" id="talk-form">
         <button type="button" class="mic" id="mic" title="Hablar" aria-label="Hablar">🎤</button>
-        <input type="text" id="talk-text" placeholder="Escribe o dicta en inglés…" autocomplete="off">
-        <button class="btn" type="submit">Enviar</button>
-        <button class="btn ghost" type="button" id="help" title="Ideas de qué decir">💡</button>
+        <input type="text" id="talk-text" placeholder="Escribe o dicta…" autocomplete="off">
+        <button class="btn" type="submit" aria-label="Enviar">➤</button>
+        <button class="btn ghost" type="button" id="help" title="Ideas de qué decir" aria-label="Ideas">💡</button>
       </form>
-      <p class="muted" id="talk-status">Consejo: en el móvil, toca el 🎤 del teclado para dictar en inglés.</p>
     </div>
 
     <div id="talk-summary" class="view" hidden></div>
@@ -240,57 +309,76 @@ label.field span.muted { font-weight: 400; }
 
   <!-- PROGRESO -->
   <section class="view" id="view-progress" hidden>
+    <h2>Tu progreso</h2>
     <div class="seg" role="group" aria-label="Materia">
       <button data-ptrack="english" aria-pressed="true">Inglés</button>
       <button data-ptrack="programming" aria-pressed="false">Programación</button>
     </div>
     <div class="stats" id="stats"></div>
+    <button class="btn ghost" id="analyze">🔍 ¿Qué me falla? Analizar con IA</button>
+    <div class="card" id="insights" hidden></div>
     <div class="card">
-      <div class="row" style="justify-content: space-between">
-        <h3>Habilidades</h3>
-        <button class="btn small" id="analyze">Analizar mis errores</button>
-      </div>
+      <h3>Habilidades</h3>
       <div id="skills"></div>
     </div>
-    <div class="card" id="insights" hidden></div>
   </section>
 
   <!-- TUTOR -->
   <section class="view" id="view-tutor" hidden>
-    <div>
-      <h2>Tu tutor</h2>
-      <p class="muted">Pregúntale lo que quieras. Ve tu progreso y tus errores recientes.</p>
-    </div>
+    <h2>Pregúntale a tu tutor</h2>
     <div class="chatlog" id="chat-log">
-      <div class="bubble them"><p>Hola. Puedo explicarte por qué fallas algo, darte ejemplos o prepararte para una situación real. Prueba: <em>«¿Cuándo uso present perfect y cuándo past simple?»</em></p></div>
+      <div class="bubble them"><p>Hola. Pregúntame lo que no entiendas, por ejemplo: <em>«¿Cuándo uso present perfect?»</em> o <em>«¿Qué es una variable?»</em></p></div>
     </div>
-    <form class="composer" id="chat-form">
+    <form class="composer above-tabs" id="chat-form">
       <input type="text" id="chat-text" placeholder="Escribe tu pregunta…" autocomplete="off">
-      <button class="btn" type="submit">Enviar</button>
+      <button class="btn" type="submit" aria-label="Enviar">➤</button>
     </form>
   </section>
 
   <!-- PERFIL -->
   <section class="view" id="view-profile" hidden>
+    <button class="link back" data-go="home">‹ Volver</button>
     <form class="card" id="profile-form">
-      <h3>Tu perfil</h3>
-      <label class="field">Nivel de inglés
-        <select name="englishLevel" id="p-level"><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+      <h2>Tu perfil</h2>
+      <label class="field">Meta diaria
+        <select id="p-goal"><option value="20">Relajada · 20 puntos</option><option value="50">Normal · 50 puntos</option><option value="100">Intensa · 100 puntos</option></select>
       </label>
-      <label class="field">Lenguaje de programación
-        <select name="programmingLanguage" id="p-lang"><option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>TypeScript</option><option>SQL</option></select>
-        <span class="muted">En JavaScript tu código se ejecuta con tests reales; en los demás lo corrige la IA.</span>
+      <label class="field">Nivel de inglés
+        <select name="englishLevel" id="p-level"><option value="A1">A1 · casi nada</option><option value="A2">A2 · básico</option><option value="B1">B1 · me defiendo</option><option value="B2">B2 · bien</option><option value="C1">C1 · muy bien</option><option value="C2">C2 · nativo</option></select>
       </label>
       <label class="field">Nivel de programación
-        <select name="programmingLevel" id="p-plevel"><option value="desde cero">desde cero (nunca he programado)</option><option>principiante</option><option>intermedio</option><option>avanzado</option></select>
+        <select name="programmingLevel" id="p-plevel"><option value="desde cero">Desde cero</option><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option></select>
       </label>
-      <label class="field">Objetivos
-        <textarea name="goals" id="p-goals" rows="3" placeholder="Ej: hablar con nativos en el trabajo, conseguir mi primer empleo como desarrollador…"></textarea>
+      <label class="field">Lenguaje
+        <select name="programmingLanguage" id="p-lang"><option>JavaScript</option><option>Python</option><option>Java</option><option>C#</option><option>TypeScript</option><option>SQL</option></select>
+        <span class="muted">Con JavaScript tu código se prueba de verdad.</span>
       </label>
-      <div class="row"><button class="btn" type="submit">Guardar</button><span class="muted" id="p-saved" hidden>Guardado</span></div>
+      <label class="field">Para qué quieres aprender
+        <textarea name="goals" id="p-goals" rows="2" placeholder="Ej: hablar con clientes en inglés, conseguir trabajo de programador…"></textarea>
+      </label>
+      <button class="btn block" type="submit">Guardar</button>
+      <p class="muted" id="p-saved" hidden>Guardado</p>
+      <p class="muted" id="save-state">Guardando en este navegador</p>
     </form>
   </section>
 </div>
+
+<!-- LECCIÓN (pantalla completa) -->
+<div class="session" id="session" hidden>
+  <div class="session-top">
+    <button class="close" id="s-close" aria-label="Salir de la lección">✕</button>
+    <div class="pbar" role="progressbar" aria-label="Avance de la lección"><i id="s-pbar"></i></div>
+  </div>
+  <div class="session-body"><div class="session-inner" id="s-body"></div></div>
+  <div class="session-foot" id="s-foot"><div class="foot-inner" id="s-foot-inner"></div></div>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button role="tab" data-view="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+  <button role="tab" data-view="talk" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v10H9l-5 4z"/></svg>Conversar</button>
+  <button role="tab" data-view="progress" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progreso</button>
+  <button role="tab" data-view="tutor" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a7 7 0 0 0-4 12.7V19h8v-3.3A7 7 0 0 0 12 3zM9 22h6"/></svg>Tutor</button>
+</nav>
 
 <script>
 (() => {
@@ -325,7 +413,7 @@ function md(text) {
 const TRACKS = ["english", "programming"];
 const DAY = 86400000, PASS = 70, ALPHA = 0.35;
 function emptyState() {
-  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "desde cero", goals: "", levelChosen: {} }, skills: {}, history: [], phrases: [] };
+  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "desde cero", goals: "", levelChosen: {}, dailyGoal: 50 }, skills: {}, history: [], phrases: [], days: {} };
 }
 let S = emptyState();
 const slug = (t) => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -418,7 +506,7 @@ const store = { ref: null, writing: false, again: false, timer: null };
 function normalize(data) {
   const base = emptyState();
   if (!data || typeof data !== "object") return base;
-  return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases) };
+  return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases), days: data.days && typeof data.days === "object" && !Array.isArray(data.days) ? data.days : {} };
 }
 function loadLocal() { try { const raw = localStorage.getItem(LOCAL_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
 function save() {
@@ -549,6 +637,320 @@ self.onmessage = async (ev) => {
 const stripFences = (c) => { const m = /^\s*```[\w+-]*\n([\s\S]*?)\n?```\s*$/.exec(c); return m ? m[1] : c; };
 const parsesJSON = (t) => { try { JSON.parse(t); return true; } catch { return false; } };
 
+// ================= Racha, puntos y meta del día =================
+const todayKey = (d = new Date()) => d.toLocaleDateString("en-CA");
+function addXP(xp, exercises = 0) {
+  const k = todayKey();
+  const d = S.days[k] ?? { xp: 0, ex: 0 };
+  d.xp += xp;
+  d.ex += exercises;
+  S.days[k] = d;
+  for (const old of Object.keys(S.days).sort().slice(0, -120)) delete S.days[old];
+}
+function streak() {
+  const d = new Date();
+  if (!(S.days[todayKey(d)]?.xp > 0)) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (S.days[todayKey(d)]?.xp > 0) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+const xpFor = (score) => (score >= 85 ? 15 : score >= 70 ? 10 : 5);
+const goal = () => Number(S.profile.dailyGoal) || 50;
+
+const TRACK_INFO = {
+  english: { name: "Inglés", badge: "Aa", cls: "en", level: () => `Nivel ${S.profile.englishLevel}` },
+  programming: { name: "Programación", badge: "{ }", cls: "code", level: () => `${S.profile.programmingLanguage} · ${({ "desde cero": "desde cero", principiante: "principiante", intermedio: "intermedio", avanzado: "avanzado" })[S.profile.programmingLevel] ?? ""}` },
+};
+function renderHome() {
+  const today = S.days[todayKey()]?.xp ?? 0;
+  const pct = Math.min(100, Math.round((today / goal()) * 100));
+  $("#ring-fill").style.strokeDashoffset = String(263.9 * (1 - pct / 100));
+  $("#ring-pct").textContent = pct >= 100 ? "✓" : `${pct}%`;
+  $("#today-title").textContent = pct >= 100 ? "¡Meta cumplida!" : today ? "Vas muy bien" : "Tu meta de hoy";
+  $("#today-xp").textContent = `${today} de ${goal()} puntos`;
+  const st = streak();
+  $("#streak-chip").textContent = `🔥 ${st}`;
+  $("#streak-chip").classList.toggle("off", st === 0);
+  $("#streak-chip").title = st === 1 ? "1 día seguido practicando" : `${st} días seguidos practicando`;
+  const days = ["D", "L", "M", "X", "J", "V", "S"];
+  const week = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    week.push(`<span class="${S.days[todayKey(d)]?.xp > 0 ? "on" : ""} ${i === 0 ? "today" : ""}" title="${todayKey(d)}">${days[d.getDay()]}</span>`);
+  }
+  $("#week").innerHTML = week.join("");
+
+  $("#track-cards").innerHTML = TRACKS.map((t) => {
+    const info = TRACK_INFO[t], sum = summary(t), due = sum.dueForReview.length;
+    const started = sum.totalAttempts > 0;
+    return `<div class="card track-card">
+      <div class="track-head"><span class="badge ${info.cls}">${info.badge}</span>
+        <div class="grow"><h3>${info.name}</h3><span class="muted">${esc(info.level())}</span></div>
+        ${due ? `<span class="chip flame">${due} por repasar</span>` : ""}</div>
+      ${started ? `<div class="meter" title="Dominio medio"><i style="width:${sum.averageMastery ?? 0}%"></i></div>` : ""}
+      <button class="btn block" data-start="${t}">${started ? "Continuar" : "Empezar"}</button>
+      <button class="link" data-topic="${t}">🎯 Practicar un tema concreto</button>
+      <form class="topic-row" data-topic-form="${t}" hidden>
+        <input type="text" maxlength="120" placeholder="${t === "english" ? "Ej: phrasal verbs, pasado" : "Ej: bucles, listas"}">
+        <button class="btn small" type="submit">Ir</button>
+      </form></div>`;
+  }).join("");
+  $$("[data-start]").forEach((b) => (b.onclick = () => startSession(b.dataset.start)));
+  $$("[data-topic]").forEach((b) => (b.onclick = () => {
+    const f = $(`[data-topic-form="${b.dataset.topic}"]`);
+    f.hidden = !f.hidden;
+    if (!f.hidden) f.querySelector("input").focus();
+  }));
+  $$("[data-topic-form]").forEach((f) => (f.onsubmit = (e) => {
+    e.preventDefault();
+    const topic = f.querySelector("input").value.trim();
+    if (topic) startSession(f.dataset.topicForm, topic);
+  }));
+  const dueP = duePhrases().length;
+  $("#home-phrases").hidden = S.phrases.length === 0;
+  $("#home-phrases-n").textContent = dueP ? `${dueP} para repasar hoy` : `${S.phrases.length} guardadas · nada pendiente`;
+}
+$("#home-talk").onclick = () => go("talk");
+$("#home-phrases").onclick = () => { go("talk"); $("#phrase-box").scrollIntoView({ behavior: "smooth" }); };
+
+// ================= Lección de 5 ejercicios =================
+const LESSON_LEN = 5;
+const Q = { track: null, focus: "", i: 0, xp: 0, correct: 0, ex: null, busy: false };
+const LEVEL_CHOICES = {
+  programming: { q: "¿Has programado alguna vez?", opts: [["desde cero", "Nunca he programado"], ["principiante", "Sé un poco"], ["intermedio", "Me defiendo"], ["avanzado", "Programo con soltura"]] },
+  english: { q: "¿Qué tal tu inglés?", opts: [["A1", "Casi nada"], ["A2", "Básico"], ["B1", "Me defiendo"], ["B2", "Bien"], ["C1", "Muy bien"]] },
+};
+const body = () => $("#s-body");
+function foot(html, tone = "") {
+  $("#s-foot").className = "session-foot " + tone;
+  $("#s-foot-inner").innerHTML = html;
+}
+const setBar = () => ($("#s-pbar").style.width = `${(Q.i / LESSON_LEN) * 100}%`);
+
+function startSession(track, focus = "") {
+  Object.assign(Q, { track, focus, i: 0, xp: 0, correct: 0, ex: null, busy: false });
+  $("#session").hidden = false;
+  document.body.style.overflow = "hidden";
+  resetClose();
+  setBar();
+  const firstTime = !S.history.some((h) => h.track === track) && !S.profile.levelChosen?.[track];
+  if (firstTime) return askLevel(track);
+  nextExercise();
+}
+function askLevel(track) {
+  const c = LEVEL_CHOICES[track];
+  body().innerHTML = `<h2>${c.q}</h2><p class="muted">Así empiezo justo por tu nivel.</p>
+    <div class="levels">${c.opts.map(([v, l]) => `<button class="btn ghost block" data-level="${esc(v)}">${esc(l)}</button>`).join("")}</div>`;
+  foot("");
+  $$("[data-level]").forEach((b) => (b.onclick = () => {
+    S.profile[track === "programming" ? "programmingLevel" : "englishLevel"] = b.dataset.level;
+    S.profile.levelChosen = { ...S.profile.levelChosen, [track]: true };
+    save();
+    nextExercise();
+  }));
+}
+function closeSession() {
+  $("#session").hidden = true;
+  document.body.style.overflow = "";
+  renderHome();
+}
+function resetClose() { const c = $("#s-close"); c.classList.remove("confirm"); c.textContent = "✕"; c.dataset.armed = ""; }
+$("#s-close").onclick = () => {
+  const c = $("#s-close");
+  if (Q.i > 0 && Q.i < LESSON_LEN && c.dataset.armed !== "1") {
+    c.dataset.armed = "1"; c.classList.add("confirm"); c.textContent = "¿Salir? Toca otra vez";
+    setTimeout(resetClose, 3000);
+    return;
+  }
+  closeSession();
+};
+
+async function nextExercise() {
+  Q.busy = true;
+  body().classList.remove("graded");
+  setBar();
+  const review = Q.focus ? null : pickReview(Q.track);
+  body().innerHTML = `<p class="thinking">${review ? `Preparando un repaso de «${esc(review.name)}»` : "Preparando tu ejercicio"}</p>`;
+  foot("");
+  try {
+    Q.ex = await createExercise(Q.track, Q.focus, review);
+    Q.ex.isReview = Boolean(review);
+    renderQuestion();
+  } catch (err) {
+    body().innerHTML = `<p class="error">${esc(errText(err))}</p>`;
+    foot('<button class="btn block" id="retry">Reintentar</button>');
+    $("#retry").onclick = nextExercise;
+  } finally {
+    Q.busy = false;
+  }
+}
+
+function testList(ex) {
+  return `<details><summary class="muted">Ver los ${ex.tests.length} tests que debe pasar</summary><ul class="tests">${ex.tests.map((t) => `<li>${esc(t.description)}: <code>${esc(ex.function_name)}(${esc(t.args_json.slice(1, -1))})</code> → <code>${esc(t.expected_json)}</code></li>`).join("")}</ul></details>`;
+}
+function testRunHTML(run, fn) {
+  const ok = !run.error && run.passed === run.total;
+  return `<div class="test-run ${ok ? "ok" : ""}"><b>${ok ? "✓" : "✗"} ${run.passed} de ${run.total} tests pasados</b>
+    ${run.error ? `<pre class="error">${esc(run.error)}</pre>` : ""}
+    <ul class="tests">${run.results.map((r) => `<li>${r.passed ? "✓" : "✗"} ${esc(r.description)}${r.passed ? "" : `<br><span class="muted"><code>${esc(fn)}(${esc(r.args_json.slice(1, -1))})</code> debía dar <code>${esc(r.expected_json)}</code> y ${r.error ? `falló: <code>${esc(r.error)}</code>` : `dio <code>${esc(r.actual ?? "")}</code>`}</span>`}</li>`).join("")}</ul>
+    ${run.logs.length ? `<details><summary class="muted">Lo que mostró tu código (${run.logs.length})</summary><pre>${esc(run.logs.join("\n"))}</pre></details>` : ""}</div>`;
+}
+const answerValue = () => {
+  const ex = Q.ex;
+  if (ex.options.length && !ex.tests.length) {
+    const i = document.querySelector('input[name="opt"]:checked')?.value;
+    return i == null ? "" : ex.options[Number(i)];
+  }
+  return $("#answer")?.value ?? "";
+};
+function renderQuestion() {
+  const ex = Q.ex;
+  const hasTests = ex.tests.length > 0;
+  const isCode = hasTests || ex.kind === "code" || ex.kind === "fix_bug";
+  const input = hasTests
+    ? `<textarea id="answer" class="code-editor" rows="${Math.max(7, ex.starter_code.split("\n").length + 2)}" spellcheck="false" autocapitalize="off" autocorrect="off">${esc(ex.starter_code)}</textarea>`
+    : ex.options.length
+      ? `<div class="options">${ex.options.map((o, i) => `<label><input type="radio" name="opt" value="${i}"><span class="opt-key">${i + 1}</span><span>${esc(o)}</span></label>`).join("")}</div>`
+      : `<textarea id="answer" rows="${isCode || ex.kind === "write" ? 6 : 3}" ${isCode ? 'class="code-editor" spellcheck="false" autocapitalize="off" autocorrect="off"' : ""} placeholder="Escribe tu respuesta"></textarea>`;
+  body().innerHTML = `
+    <div class="row">${ex.isReview ? '<span class="chip flame">Repaso</span>' : '<span class="chip accent">Nuevo</span>'}<span class="chip">${esc(ex.skill)}</span></div>
+    ${ex.lesson ? `<div class="lesson"><span class="eyebrow">Primero, lo que necesitas saber</span>${md(ex.lesson)}</div>` : ""}
+    <p class="question">${esc(ex.instructions)}</p>
+    ${ex.content ? md(ex.content) : ""}
+    ${hasTests ? testList(ex) : ""}
+    ${input}
+    ${hasTests ? '<button class="btn ghost" id="run">▶ Probar mi código</button><div id="run-out"></div>' : ""}
+    <button class="link" id="hint-btn">💡 Ver una pista</button>
+    <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>`;
+  foot(`<div class="row"><button class="btn ghost" id="dunno">No lo sé</button><button class="btn" id="check" disabled>Comprobar</button></div>`);
+  const sync = () => ($("#check").disabled = !answerValue().trim());
+  body().oninput = sync;
+  body().onchange = sync;
+  sync();
+  $("#hint-btn").onclick = () => { $("#hint").hidden = false; $("#hint-btn").hidden = true; };
+  $("#dunno").onclick = () => check(true);
+  $("#check").onclick = () => check(false);
+  if (hasTests) {
+    $("#run").onclick = async () => {
+      $("#run").disabled = true;
+      $("#run-out").innerHTML = testRunHTML(await runTests($("#answer").value, ex.function_name, ex.tests), ex.function_name);
+      $("#run").disabled = false;
+    };
+  }
+  $("#answer")?.addEventListener("keydown", (e) => {
+    if (isCode && e.key === "Tab" && !e.shiftKey) { e.preventDefault(); e.target.setRangeText("  ", e.target.selectionStart, e.target.selectionEnd, "end"); }
+  });
+  $(".session-body").scrollTop = 0;
+}
+
+async function check(dunno) {
+  if (Q.busy) return;
+  const ex = Q.ex, answer = answerValue();
+  if (!dunno && !answer.trim()) return;
+  Q.busy = true;
+  foot('<p class="thinking">Corrigiendo</p>');
+  body().querySelectorAll("textarea, input, button").forEach((el) => (el.disabled = true));
+  try {
+    const r = await gradeExercise(ex, answer, dunno);
+    const xp = dunno ? 2 : xpFor(r.score);
+    Q.xp += xp;
+    if (r.score >= PASS) Q.correct++;
+    addXP(xp, 1);
+    save();
+    const tone = r.verdict === "correcto" ? "good" : r.verdict === "casi" ? "mid" : "bad";
+    const title = { correcto: "¡Correcto!", casi: "¡Casi!", incorrecto: dunno ? "Vamos a verlo" : "No del todo" }[r.verdict];
+    const short = dunno ? "Aquí arriba tienes cómo se resuelve, paso a paso." : str(r.g?.tip) || str(r.g?.mistake_summary);
+    const isCode = ex.tests.length || ex.kind === "code" || ex.kind === "fix_bug";
+    body().insertAdjacentHTML("beforeend", `<div class="card" id="explain" ${r.verdict === "correcto" && !r.testRun ? "hidden" : ""}>
+      ${r.testRun ? testRunHTML(r.testRun, ex.function_name) : ""}
+      ${md(str(r.g?.feedback))}
+      <details ${dunno ? "open" : ""}><summary>Respuesta correcta</summary>${isCode ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>
+      <p class="muted">Lo repasarás ${r.sk.intervalDays === 0 ? "pronto" : whenText(r.sk.dueAt)}.</p></div>`);
+    foot(`<div class="verdict">${title} <span class="xp-pop">+${xp}</span></div>
+      ${short ? `<p>${esc(short)}</p>` : ""}
+      <div class="row">${$("#explain").hidden ? '<button class="btn ghost" id="why">Ver explicación</button>' : ""}<button class="btn" id="continue">Continuar</button></div>`, tone);
+    $("#why")?.addEventListener("click", () => { $("#explain").hidden = false; $("#why").remove(); scrollToExplain(); });
+    body().classList.add("graded");
+    if (r.verdict !== "correcto" || r.testRun) scrollToExplain();
+    $("#continue").onclick = () => { Q.i++; Q.i >= LESSON_LEN ? finishSession() : nextExercise(); };
+    $("#continue").focus({ preventScroll: true });
+  } catch (err) {
+    body().querySelectorAll("textarea, input, button").forEach((el) => (el.disabled = false));
+    foot(`<p class="error">${esc(errText(err))}</p><button class="btn block" id="retry">Volver a intentar</button>`);
+    $("#retry").onclick = () => check(dunno);
+  } finally {
+    Q.busy = false;
+  }
+}
+
+function scrollToExplain() {
+  const box = $(".session-body"), el = $("#explain");
+  const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top - 12;
+  box.scrollBy({ top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+function finishSession() {
+  setBar();
+  body().classList.remove("graded");
+  const st = streak();
+  body().innerHTML = `<div class="view finish">
+    <div class="trophy">${Q.correct >= 4 ? "🏆" : Q.correct >= 2 ? "⭐" : "💪"}</div>
+    <h2>${Q.correct >= 4 ? "¡Lección superada!" : Q.correct >= 2 ? "¡Buen trabajo!" : "¡Lección completada!"}</h2>
+    <p class="muted">${Q.correct >= 4 ? "Lo estás dominando." : "Lo que fallaste volverá en tus repasos hasta que lo domines."}</p>
+    <div class="finish-stats">
+      <div class="stat"><span class="muted">Puntos</span><b>+${Q.xp}</b></div>
+      <div class="stat"><span class="muted">Aciertos</span><b>${Q.correct}/${LESSON_LEN}</b></div>
+      <div class="stat"><span class="muted">Racha</span><b>🔥${st}</b></div>
+    </div></div>`;
+  foot('<div class="row"><button class="btn ghost" id="done">Volver</button><button class="btn" id="again">Otra lección</button></div>');
+  $("#done").onclick = closeSession;
+  $("#again").onclick = () => startSession(Q.track, Q.focus);
+}
+
+const GRADE_PROMPT = (ex, answer, dunno, testRun) => `${TUTOR}
+
+Corrige la respuesta del alumno. Sé justo: acepta respuestas equivalentes a la de referencia (otra traducción válida, otro código que funcione).
+<learner>
+${learnerContext(ex.track)}
+</learner>
+<exercise>
+${JSON.stringify({ skill: ex.skill, kind: ex.kind, instructions: ex.instructions, content: ex.content, options: ex.options, reference_answer: ex.reference_answer })}
+</exercise>
+${dunno ? `El alumno ha pulsado «No lo sé». Pon score 0 y verdict "incorrecto". En feedback, explícale cómo resolverlo PASO A PASO, como a alguien
+que lo ve por primera vez: qué pide el ejercicio, el razonamiento y la solución comentada. mistake_summary: "No sabía cómo resolverlo".` : `<student_answer>
+${answer.slice(0, 8000)}
+</student_answer>`}
+${testRun ? `Se ejecutó su código: pasó ${testRun.passed} de ${testRun.total} tests.${testRun.error ? ` Error general: ${testRun.error}` : ""}
+<test_results>${JSON.stringify(testRun.results.map(({ description, args_json, expected_json, passed, actual, error }) => ({ description, args_json, expected_json, passed, actual, error })))}</test_results>
+Los tests son la verdad: no digas que funciona si alguno falla; explica el caso concreto.` : ""}
+
+Responde SOLO con un objeto JSON:
+{"score": 0-100 (70+ = aceptable), "verdict": "correcto|casi|incorrecto",
+ "feedback": "corrección en español en markdown: qué estuvo bien, qué falló y por qué, y la versión correcta",
+ "mistake_summary": "el error concreto en una línea (vacío si no hubo)",
+ "other_weak_skills": ["otras habilidades donde falló, nombres cortos en español"], "tip": "un consejo práctico"}`;
+
+// Corrige un ejercicio, lo registra en el progreso y devuelve el resultado.
+async function gradeExercise(ex, answer, dunno) {
+  const testRun = ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null;
+  const g = await askJSON(GRADE_PROMPT(ex, answer, dunno, testRun), { cache: false });
+  let score = clamp(g?.score, 0, 100);
+  let verdict = ["correcto", "casi", "incorrecto"].includes(g?.verdict) ? g.verdict : score >= 85 ? "correcto" : score >= 70 ? "casi" : "incorrecto";
+  if (testRun) {
+    const all = !testRun.error && testRun.passed === testRun.total;
+    score = all ? Math.max(score, 70) : Math.min(score, 69);
+    if (all && verdict === "incorrecto") verdict = "casi";
+    if (!all && verdict === "correcto") verdict = "casi";
+  }
+  if (dunno) { score = 0; verdict = "incorrecto"; }
+  recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
+  return { g, score, verdict, testRun, sk: S.skills[skillKey(ex.track, ex.skill)] };
+}
+function whenText(iso) {
+  const d = Math.round((new Date(iso) - Date.now()) / DAY);
+  return d <= 0 ? "hoy" : d === 1 ? "mañana" : d < 60 ? `en ${d} días` : `en ${Math.round(d / 30)} meses`;
+}
+
 // ================= Practicar =================
 const P = { track: "english", exercise: null };
 function pickReview(track) {
@@ -641,178 +1043,6 @@ async function createExercise(track, focus, review) {
   return { ...ex, tests: [], track }; // sin tests fiables: lo corrige solo la IA
 }
 
-const LEVEL_CHOICES = {
-  programming: [["desde cero", "Nunca he programado"], ["principiante", "Sé un poco"], ["intermedio", "Me defiendo"], ["avanzado", "Programo con soltura"]],
-  english: [["A1", "Casi nada"], ["A2", "Básico"], ["B1", "Me defiendo"], ["B2", "Bien"], ["C1", "Muy bien"]],
-};
-function renderDueBanner() {
-  const hasHistory = S.history.some((h) => h.track === P.track);
-  if (!hasHistory && !S.profile.levelChosen?.[P.track]) {
-    $("#due-banner").innerHTML = `<div class="card levels"><h3>${P.track === "programming" ? "¿Has programado alguna vez?" : "¿Qué tal tu inglés?"}</h3>
-      <p class="muted">Así empiezo por tu nivel. Puedes cambiarlo cuando quieras en Perfil.</p>
-      <div class="row">${LEVEL_CHOICES[P.track].map(([v, l]) => `<button type="button" class="btn ghost" data-level="${esc(v)}">${esc(l)}</button>`).join("")}</div></div>`;
-    $$("[data-level]").forEach((b) => (b.onclick = () => {
-      S.profile[P.track === "programming" ? "programmingLevel" : "englishLevel"] = b.dataset.level;
-      S.profile.levelChosen = { ...S.profile.levelChosen, [P.track]: true };
-      save(); renderProfile(); renderDueBanner();
-      $("#new-ex").requestSubmit($('#new-ex button[value="auto"]'));
-    }));
-    return;
-  }
-  const due = dueSkills(P.track).map((s) => s.name);
-  $("#due-banner").textContent = due.length
-    ? `Tienes ${due.length} repaso${due.length === 1 ? "" : "s"} pendiente${due.length === 1 ? "" : "s"}: ${due.slice(0, 4).join(", ")}${due.length > 4 ? "…" : ""}. «Siguiente ejercicio» empieza por ahí.`
-    : "Sin repasos pendientes: «Siguiente ejercicio» te enseña algo nuevo.";
-}
-$$("[data-track]").forEach((b) => b.addEventListener("click", () => {
-  P.track = b.dataset.track;
-  $$("[data-track]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-  renderDueBanner();
-}));
-
-$("#new-ex").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btns = $$("#new-ex button");
-  btns.forEach((b) => (b.disabled = true));
-  const focus = $("#focus").value.trim().slice(0, 200);
-  const review = focus || e.submitter?.value === "new" ? null : pickReview(P.track);
-  $("#result").hidden = true;
-  $("#exercise").innerHTML = `<p class="thinking">${review ? `Preparando un repaso de «${esc(review.name)}»` : "Preparando tu ejercicio"}</p>`;
-  try {
-    P.exercise = await createExercise(P.track, focus, review);
-    P.exercise.isReview = Boolean(review);
-    renderExercise();
-  } catch (err) {
-    $("#exercise").innerHTML = `<p class="error">${esc(errText(err))}</p>`;
-  } finally {
-    btns.forEach((b) => (b.disabled = false));
-  }
-});
-
-function testList(ex) {
-  return `<details open><summary class="muted">Tests (${ex.tests.length}) · se ejecutan de verdad</summary><ul class="tests">${ex.tests.map((t) => `<li>${esc(t.description)}: <code>${esc(ex.function_name)}(${esc(t.args_json.slice(1, -1))})</code> → <code>${esc(t.expected_json)}</code></li>`).join("")}</ul></details>`;
-}
-function testRunHTML(run, fn) {
-  const ok = !run.error && run.passed === run.total;
-  return `<div class="test-run ${ok ? "ok" : ""}"><b>${ok ? "✓" : "✗"} ${run.passed}/${run.total} tests pasados</b>
-    ${run.error ? `<pre class="error">${esc(run.error)}</pre>` : ""}
-    <ul class="tests">${run.results.map((r) => `<li>${r.passed ? "✓" : "✗"} ${esc(r.description)} — <code>${esc(fn)}(${esc(r.args_json.slice(1, -1))})</code>${r.passed ? "" : `<br><span class="muted">esperado <code>${esc(r.expected_json)}</code>, ${r.error ? `error: <code>${esc(r.error)}</code>` : `obtenido <code>${esc(r.actual ?? "")}</code>`}</span>`}</li>`).join("")}</ul>
-    ${run.logs.length ? `<details><summary class="muted">Consola (${run.logs.length})</summary><pre>${esc(run.logs.join("\n"))}</pre></details>` : ""}</div>`;
-}
-function renderExercise() {
-  const ex = P.exercise;
-  const hasTests = ex.tests.length > 0;
-  const input = hasTests
-    ? `<textarea id="answer" class="code-editor" rows="${Math.max(8, ex.starter_code.split("\n").length + 3)}" spellcheck="false">${esc(ex.starter_code)}</textarea>`
-    : ex.options.length
-      ? `<div class="options">${ex.options.map((o, i) => `<label><input type="radio" name="opt" value="${i}"><span>${esc(o)}</span></label>`).join("")}</div>`
-      : `<textarea id="answer" rows="${["code", "fix_bug", "write"].includes(ex.kind) ? 8 : 3}" ${ex.kind === "code" || ex.kind === "fix_bug" ? 'class="code-editor" spellcheck="false"' : ""} placeholder="Tu respuesta"></textarea>`;
-  $("#exercise").innerHTML = `
-    <div class="row">${ex.isReview ? '<span class="chip accent">Repaso</span>' : ""}<span class="chip">${esc(ex.skill)}</span><span class="chip">Dificultad ${ex.difficulty}/5</span></div>
-    ${ex.why ? `<p class="muted">${esc(ex.why)}</p>` : ""}
-    ${ex.lesson ? `<div class="lesson"><span class="eyebrow">Primero, lo que necesitas saber</span>${md(ex.lesson)}</div>` : ""}
-    <h3>${esc(ex.instructions)}</h3>
-    ${md(ex.content)}
-    ${hasTests ? testList(ex) : ""}
-    <form id="answer-form" class="view">
-      ${input}
-      <div class="row">
-        ${hasTests ? '<button type="button" class="btn ghost" id="run">Ejecutar tests</button>' : ""}
-        <button class="btn" type="submit">${hasTests ? "Enviar solución" : "Comprobar"}</button>
-        <button type="button" class="btn ghost" id="hint-btn">Pista</button>
-        <button type="button" class="btn ghost" id="dunno">No lo sé</button>
-      </div>
-      <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>
-    </form>
-    <div id="run-out"></div>`;
-  $("#hint-btn").onclick = () => ($("#hint").hidden = false);
-  $("#dunno").onclick = (e) => gradeAnswer("", e.currentTarget, true);
-  if (hasTests) {
-    $("#run").onclick = async () => {
-      $("#run").disabled = true;
-      $("#run-out").innerHTML = testRunHTML(await runTests($("#answer").value, ex.function_name, ex.tests), ex.function_name);
-      $("#run").disabled = false;
-    };
-    $("#answer").addEventListener("keydown", (e) => {
-      if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); e.target.setRangeText("  ", e.target.selectionStart, e.target.selectionEnd, "end"); }
-    });
-  }
-  $("#answer-form").addEventListener("submit", submitAnswer);
-}
-
-function submitAnswer(e) {
-  e.preventDefault();
-  const ex = P.exercise;
-  const answer = ex.options.length && !ex.tests.length
-    ? ex.options[Number(document.querySelector('input[name="opt"]:checked')?.value)] : $("#answer")?.value;
-  if (!answer?.trim()) return;
-  gradeAnswer(answer, e.submitter);
-}
-
-async function gradeAnswer(answer, btn, dunno = false) {
-  const ex = P.exercise;
-  btn.disabled = true;
-  const res = $("#result");
-  res.hidden = false;
-  res.innerHTML = '<p class="thinking">Corrigiendo</p>';
-  try {
-    const testRun = ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null;
-    const g = await askJSON(`${TUTOR}
-
-Corrige la respuesta del alumno. Sé justo: acepta respuestas equivalentes a la de referencia (otra traducción válida, otro código que funcione).
-<learner>
-${learnerContext(ex.track)}
-</learner>
-<exercise>
-${JSON.stringify({ skill: ex.skill, kind: ex.kind, instructions: ex.instructions, content: ex.content, options: ex.options, reference_answer: ex.reference_answer })}
-</exercise>
-${dunno ? `El alumno ha pulsado «No lo sé». Pon score 0 y verdict "incorrecto". En feedback, explícale cómo resolverlo PASO A PASO, como a alguien
-que lo ve por primera vez: qué pide el ejercicio, el razonamiento y la solución comentada. mistake_summary: "No sabía cómo resolverlo".` : `<student_answer>
-${answer.slice(0, 8000)}
-</student_answer>`}
-${testRun ? `Se ejecutó su código: pasó ${testRun.passed} de ${testRun.total} tests.${testRun.error ? ` Error general: ${testRun.error}` : ""}
-<test_results>${JSON.stringify(testRun.results.map(({ description, args_json, expected_json, passed, actual, error }) => ({ description, args_json, expected_json, passed, actual, error })))}</test_results>
-Los tests son la verdad: no digas que funciona si alguno falla; explica el caso concreto.` : ""}
-
-Responde SOLO con un objeto JSON:
-{"score": 0-100 (70+ = aceptable), "verdict": "correcto|casi|incorrecto",
- "feedback": "corrección en español en markdown: qué estuvo bien, qué falló y por qué, y la versión correcta",
- "mistake_summary": "el error concreto en una línea (vacío si no hubo)",
- "other_weak_skills": ["otras habilidades donde falló, nombres cortos en español"], "tip": "un consejo práctico"}`, { cache: false });
-    let score = clamp(g?.score, 0, 100);
-    let verdict = ["correcto", "casi", "incorrecto"].includes(g?.verdict) ? g.verdict : score >= 85 ? "correcto" : score >= 70 ? "casi" : "incorrecto";
-    if (testRun) {
-      const all = !testRun.error && testRun.passed === testRun.total;
-      score = all ? Math.max(score, 70) : Math.min(score, 69);
-      if (all && verdict === "incorrecto") verdict = "casi";
-      if (!all && verdict === "correcto") verdict = "casi";
-    }
-    if (dunno) { score = 0; verdict = "incorrecto"; }
-    recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
-    save();
-    const sk = S.skills[skillKey(ex.track, ex.skill)];
-    res.innerHTML = `
-      <p class="verdict v-${verdict}">${{ correcto: "¡Correcto!", casi: "Casi", incorrecto: "Incorrecto" }[verdict]} · ${score}/100</p>
-      ${testRun ? testRunHTML(testRun, ex.function_name) : ""}
-      ${md(str(g?.feedback))}
-      ${g?.tip ? `<p><b>Consejo:</b> ${esc(g.tip)}</p>` : ""}
-      <details><summary>Respuesta de referencia</summary>${ex.tests.length || ex.kind === "code" ? `<pre><code>${esc(ex.reference_answer)}</code></pre>` : md(ex.reference_answer)}</details>
-      <p class="muted">Próximo repaso de «${esc(ex.skill)}»: ${sk.intervalDays === 0 ? "en tu próxima sesión (hay que reforzarlo)" : whenText(sk.dueAt)}.</p>
-      <div class="row"><button class="btn" id="next">Siguiente ejercicio</button></div>`;
-    $("#next").onclick = () => $("#new-ex").requestSubmit($('#new-ex button[value="auto"]'));
-    $("#answer-form").querySelector(".row").remove();
-    $("#run-out").innerHTML = "";
-    renderDueBanner();
-  } catch (err) {
-    res.innerHTML = `<p class="error">${esc(errText(err))}</p>`;
-    btn.disabled = false;
-  }
-}
-function whenText(iso) {
-  const d = Math.round((new Date(iso) - Date.now()) / DAY);
-  return d <= 0 ? "hoy" : d === 1 ? "mañana" : d < 60 ? `en ${d} días` : `en ${Math.round(d / 30)} meses`;
-}
-
 // ================= Voz =================
 const canSpeak = "speechSynthesis" in window;
 const LANG = { us: "en-US", uk: "en-GB", au: "en-AU" };
@@ -883,12 +1113,16 @@ const LEVEL_STYLE = {
   B1: "Como un nativo amable: contracciones, phrasal verbs y expresiones comunes.", B2: "Como un nativo normal: ritmo natural, phrasal verbs, idioms comunes y algo de slang.",
   C1: "Exactamente como un nativo, con slang, idioms y humor.", C2: "Exactamente como un nativo, con slang, idioms y humor.",
 };
+
+const SCENARIO_EMOJI = { coffee: "☕", "small-talk": "👋", "new-friend": "🍻", directions: "🗺️", restaurant: "🍽️", "job-interview": "💼", doctor: "🩺", "phone-call": "📞", standup: "🧑‍💻" };
 const T = { scenario: null, msgs: [], turns: [], busy: false, suggestions: [] };
-$("#scenarios").innerHTML = SCENARIOS.map((s) => `<button class="scenario" data-sc="${s.id}"><b>${esc(s.title)}</b><span>${esc(s.goal)}</span></button>`).join("");
+$("#scenarios").innerHTML = SCENARIOS.map((s) => `<button class="scenario" data-sc="${s.id}"><span class="emo">${SCENARIO_EMOJI[s.id] ?? "💬"}</span><b>${esc(s.title)}</b></button>`).join("");
 $("#scenarios").addEventListener("click", (e) => { const b = e.target.closest("[data-sc]"); if (b) startTalk(SCENARIOS.find((s) => s.id === b.dataset.sc)); });
 
 function startTalk(sc) {
   Object.assign(T, { scenario: sc, msgs: [], turns: [], suggestions: [] });
+  document.body.classList.add("focus");
+  window.scrollTo({ top: 0 });
   $("#talk-setup").hidden = true; $("#talk-summary").hidden = true; $("#talk-session").hidden = false; $("#goal-done").hidden = true;
   $("#talk-title").textContent = sc.title;
   $("#talk-goal").textContent = "Tu objetivo: " + sc.goal;
@@ -999,7 +1233,7 @@ $("#mic").onclick = async () => {
     $("#mic").classList.remove("on");
   }
 };
-const exitTalk = () => { stopSpeak(); $("#talk-session").hidden = true; $("#talk-summary").hidden = true; $("#talk-setup").hidden = false; renderPhrases(); };
+const exitTalk = () => { stopSpeak(); document.body.classList.remove("focus"); $("#talk-session").hidden = true; $("#talk-summary").hidden = true; $("#talk-setup").hidden = false; renderPhrases(); };
 $("#talk-exit").onclick = () => {
   if (T.msgs.some((m) => m.role === "user") && $("#talk-exit").dataset.confirm !== "1") {
     $("#talk-exit").dataset.confirm = "1"; $("#talk-exit").textContent = "¿Salir sin evaluar?";
@@ -1033,6 +1267,7 @@ Responde SOLO con un objeto JSON:
  "skills": [{"skill": "", "score": 0-100, "mistake": "error concreto si score < 70, si no vacío"}],
  "native_phrases": [{"phrase": "expresión de nativo útil aquí", "meaning_es": "", "when_to_use_es": ""}] (5-8)}`, { cache: false });
     for (const s of arr(r?.skills)) if (str(s?.skill)) recordAttempt({ track: "english", skill: str(s.skill), score: clamp(s.score, 0, 100), mistake: str(s.mistake) });
+    addXP(30);
     const added = addPhrases(arr(r?.native_phrases).filter((p) => str(p?.phrase)), T.scenario.id);
     save();
     renderSummary(r, added);
@@ -1045,6 +1280,8 @@ Responde SOLO con un objeto JSON:
 };
 const meter = (v) => `<div class="meter"><i style="width:${v}%;background:${v >= 80 ? "var(--good)" : v >= 50 ? "var(--mid)" : "var(--bad)"}"></i></div>`;
 function renderSummary(r, added) {
+  document.body.classList.remove("focus");
+  window.scrollTo({ top: 0 });
   $("#talk-session").hidden = true;
   const box = $("#talk-summary");
   box.hidden = false;
@@ -1057,6 +1294,7 @@ function renderSummary(r, added) {
     ${arr(r?.to_improve).length ? `<h3>Para sonar como un nativo</h3>${arr(r.to_improve).map((t) => `<p><span class="chip">${esc(t?.skill)}</span><br>Dijiste: <em>${esc(t?.you_said)}</em><br>Nativo: <b>${esc(t?.native_version)}</b> ${sayBtn(str(t?.native_version))}<br><span class="muted">${esc(t?.tip_es)}</span></p>`).join("")}` : ""}
     <h3>Expresiones de nativo</h3>
     <ul>${arr(r?.native_phrases).map((p) => `<li><b>${esc(p?.phrase)}</b> ${sayBtn(str(p?.phrase))} — ${esc(p?.meaning_es)} <span class="muted">(${esc(p?.when_to_use_es)})</span></li>`).join("")}</ul>
+    <p class="xp-pop">+30 puntos</p>
     <p class="muted">${added} frase${added === 1 ? "" : "s"} nueva${added === 1 ? "" : "s"} en tu libreta. Tus resultados ya cuentan en tu progreso.</p>
     <div class="row"><button class="btn" id="again">Repetir situación</button><button class="btn ghost" id="other">Elegir otra</button></div></div>`;
   $("#again").onclick = () => startTalk(T.scenario);
@@ -1087,6 +1325,7 @@ function nextPhrase() {
     if (!answer.trim()) return;
     const r = comparePhrase(p.phrase, answer);
     schedule(p, r.score);
+    addXP(2);
     save();
     $("#ph-out").innerHTML = `<p>${r.score >= 85 ? "✓" : r.score >= 70 ? "≈" : "✗"} ${r.score}/100 · <b>${esc(p.phrase)}</b> ${sayBtn(p.phrase)}</p>
       <p class="words">${r.words.map((w) => `<span class="${w.ok ? "ok" : "miss"}">${esc(w.w)}</span>`).join("")}</p>
@@ -1171,27 +1410,32 @@ $("#chat-form").addEventListener("submit", async (e) => {
 // ================= Perfil =================
 function renderProfile() {
   $("#p-level").value = S.profile.englishLevel; $("#p-lang").value = S.profile.programmingLanguage;
+  $("#p-goal").value = String(goal());
   $("#p-plevel").value = S.profile.programmingLevel; $("#p-goals").value = S.profile.goals;
 }
 $("#profile-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500), levelChosen: { english: true, programming: true } });
-  renderDueBanner();
+  Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500), levelChosen: { english: true, programming: true }, dailyGoal: Number($("#p-goal").value) || 50 });
+  renderHome();
   save();
   $("#p-saved").hidden = false;
   setTimeout(() => ($("#p-saved").hidden = true), 2000);
 });
 
 // ================= Navegación =================
-$$("nav.tabs button").forEach((b) => b.addEventListener("click", () => {
-  $$("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-  $$("section.view").forEach((v) => (v.hidden = v.id !== "view-" + b.dataset.view));
-  if (b.dataset.view === "progress") renderProgress();
-  if (b.dataset.view === "talk") renderPhrases();
-  if (b.dataset.view === "profile") renderProfile();
+function go(view) {
+  $$("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.view === view)));
+  $$("section.view").forEach((v) => (v.hidden = v.id !== "view-" + view));
+  if (view === "home") renderHome();
+  if (view === "progress") renderProgress();
+  if (view === "talk") renderPhrases();
+  if (view === "profile") renderProfile();
   window.scrollTo({ top: 0 });
-}));
-function renderAll() { renderDueBanner(); renderProgress(); renderPhrases(); renderProfile(); }
+}
+$$("nav.tabs button").forEach((b) => (b.onclick = () => go(b.dataset.view)));
+$("#open-profile").onclick = () => go("profile");
+$$("[data-go]").forEach((b) => (b.onclick = () => go(b.dataset.go)));
+function renderAll() { renderHome(); renderProgress(); renderPhrases(); renderProfile(); }
 
 initStore();
 })();
