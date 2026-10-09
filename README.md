@@ -6,8 +6,8 @@ detecta qué te falla y adapta los ejercicios a tus puntos débiles.
 ## Qué hace
 
 - **Practicar**: la IA genera un ejercicio cada vez (opción múltiple, traducción, rellenar huecos, escribir código,
-  predecir la salida, arreglar un bug...). Elige la habilidad según tu progreso: la mayoría de las veces refuerza lo que
-  fallas, y de vez en cuando introduce algo nuevo. También puedes pedir un tema concreto.
+  predecir la salida, arreglar un bug...). *Siguiente ejercicio* empieza por tus repasos pendientes y, cuando no quedan,
+  te enseña algo nuevo. *Aprender algo nuevo* salta los repasos. También puedes pedir un tema concreto.
 - **Corrección con IA**: puntuación de 0 a 100, explicación del error, consejo y respuesta de referencia. Acepta respuestas
   equivalentes (otra traducción válida, otro código que funcione).
 - **Mi progreso**: dominio (0-100) por habilidad, aciertos, y los últimos errores concretos de cada una.
@@ -23,6 +23,11 @@ Cada respuesta corregida actualiza la habilidad practicada (`src/progress.js`):
   y baja si vuelves a fallar.
 - Si la IA detecta fallos en otras habilidades dentro de la misma respuesta (p. ej. ortografía en un ejercicio de
   tiempos verbales), también se registran.
+- **Repetición espaciada** (inspirada en SM-2): cada habilidad tiene una fecha de próximo repaso. Al acertar, el
+  intervalo crece (1 día → 3 días → ×2,5 aprox., hasta 180 días); un acierto con dudas (70-84) crece más despacio.
+  Al fallar, la habilidad queda pendiente para tu próxima sesión y su "facilidad" baja, así que luego crecerá más lento.
+  Los repasos pendientes se hacen primero, empezando por los de menor dominio. Si fallas un ejercicio, la IA vuelve
+  sobre ese mismo error desde otro ángulo.
 - Se guardan los últimos 5 errores de cada habilidad. Ese resumen (perfil + habilidades más débiles + errores) se envía
   a la IA al generar ejercicios, corregir, analizar y chatear.
 
@@ -55,7 +60,6 @@ si un modelo rechaza una petición, la API la reintenta automáticamente con otr
 
 ## Ideas para seguir
 
-- Repetición espaciada: volver a practicar una habilidad dominada cuando hace días que no se ve.
 - Ejecutar el código del alumno en un sandbox para comprobarlo con tests reales.
 - Práctica oral de inglés (voz a texto) y lecturas con preguntas de comprensión.
 - Varios usuarios con login y base de datos.

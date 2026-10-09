@@ -23,9 +23,11 @@
         <button data-track="english" class="active">🇬🇧 Inglés</button>
         <button data-track="programming">💻 Programación</button>
       </div>
+      <p id="due-banner" class="muted"></p>
       <form id="new-exercise" class="row">
         <input id="focus" placeholder="Opcional: tema que quieres practicar (p. ej. 'present perfect', 'arrays')">
-        <button type="submit">Nuevo ejercicio</button>
+        <button type="submit" value="auto">Siguiente ejercicio</button>
+        <button type="submit" value="new" class="secondary">Aprender algo nuevo</button>
       </form>
       <div id="exercise" class="card hidden"></div>
       <div id="result" class="card hidden"></div>

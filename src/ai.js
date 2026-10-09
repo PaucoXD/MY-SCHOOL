@@ -54,10 +54,23 @@ const EXERCISE_SCHEMA = {
   additionalProperties: false,
 };
 
-export function generateExercise({ track, context, focus }) {
+export function generateExercise({ track, context, focus, review }) {
   const topic = track === "english"
     ? "inglés (gramática, vocabulario, traducción, comprensión, escritura)"
     : "programación (en el lenguaje del perfil: lógica, sintaxis, estructuras de datos, depuración, conceptos)";
+  let selection;
+  if (focus) {
+    selection = `El alumno pidió practicar: ${focus}`;
+  } else if (review) {
+    selection = `Este ejercicio es un REPASO programado (repetición espaciada) de la habilidad "${review.name}"
+(dominio ${review.mastery}/100, último intervalo ${review.intervalDays} días).
+Errores recientes en ella: ${review.mistakes.length ? review.mistakes.join(" | ") : "ninguno"}.
+Usa exactamente "${review.name}" como skill. Si tuvo errores, ataca ese mismo punto desde un ángulo distinto
+(no repitas un ejercicio idéntico). Si la domina, sube un poco la dificultad. En why_this_exercise di que es un repaso y por qué.`;
+  } else {
+    selection = `No hay repasos pendientes, así que toca avanzar: introduce una habilidad nueva adecuada a su nivel
+(o el siguiente paso lógico de lo que ya domina). Si no hay historial, empieza por un diagnóstico de su nivel declarado.`;
+  }
   return structured({
     system: TUTOR_SYSTEM,
     effort: "medium",
@@ -67,10 +80,10 @@ export function generateExercise({ track, context, focus }) {
 <learner>
 ${context}
 </learner>
-${focus ? `\nEl alumno pidió practicar: ${focus}\n` : ""}
-Elige la habilidad así: si hay habilidades débiles (dominio < 70), practica una de ellas la mayoría de las veces;
-de vez en cuando introduce una habilidad nueva adecuada a su nivel para ampliar. Si no hay historial, empieza por un
-diagnóstico de su nivel declarado. Varía el tipo de ejercicio. Debe poder responderse en 1-5 minutos.`,
+
+${selection}
+
+Varía el tipo de ejercicio. Debe poder responderse en 1-5 minutos.`,
   });
 }
 

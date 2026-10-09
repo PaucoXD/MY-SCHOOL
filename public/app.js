@@ -46,6 +46,27 @@ function masteryColor(m) {
   return m >= 80 ? "var(--good)" : m >= 50 ? "var(--mid)" : "var(--bad)";
 }
 
+// "hoy", "mañana", "en 5 días"...
+function whenText(iso) {
+  const days = Math.round((new Date(iso) - Date.now()) / 86400000);
+  if (days <= 0) return "hoy";
+  if (days === 1) return "mañana";
+  if (days < 60) return `en ${days} días`;
+  return `en ${Math.round(days / 30)} meses`;
+}
+
+async function refreshDueBanner() {
+  try {
+    const data = await api("/api/progress");
+    const due = data.tracks[state.practiceTrack].dueForReview;
+    $("#due-banner").textContent = due.length
+      ? `🔁 Tienes ${due.length} repaso${due.length === 1 ? "" : "s"} pendiente${due.length === 1 ? "" : "s"}: ${due.join(", ")}. "Siguiente ejercicio" empieza por ahí.`
+      : "✅ Sin repasos pendientes. \"Siguiente ejercicio\" te enseñará algo nuevo.";
+  } catch {
+    $("#due-banner").textContent = "";
+  }
+}
+
 function busy(button, on, label) {
   button.disabled = on;
   if (on) {
@@ -72,6 +93,7 @@ document.querySelectorAll(".track-switch").forEach((sw) =>
       sw.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
       if (sw.closest("#view-practice")) {
         state.practiceTrack = btn.dataset.track;
+        refreshDueBanner();
       } else {
         state.progressTrack = btn.dataset.track;
         $("#insights").classList.add("hidden");
@@ -90,7 +112,7 @@ $("#new-exercise").addEventListener("submit", async (e) => {
   try {
     state.exercise = await api("/api/exercise", {
       method: "POST",
-      body: { track: state.practiceTrack, focus: $("#focus").value },
+      body: { track: state.practiceTrack, focus: $("#focus").value, mode: btn.value },
     });
     renderExercise(state.exercise);
   } catch (err) {
@@ -109,7 +131,7 @@ function renderExercise(ex) {
         .join("")}</div>`
     : `<textarea id="answer" rows="${["code", "fix_bug", "write"].includes(ex.kind) ? 10 : 3}" placeholder="Tu respuesta"></textarea>`;
   box.innerHTML = `
-    <div><span class="tag">${escapeHtml(ex.skill)}</span><span class="tag">Dificultad ${ex.difficulty}/5</span></div>
+    <div>${ex.isReview ? `<span class="tag review">🔁 Repaso</span>` : ""}<span class="tag">${escapeHtml(ex.skill)}</span><span class="tag">Dificultad ${ex.difficulty}/5</span></div>
     <p class="muted">${escapeHtml(ex.why_this_exercise)}</p>
     <h3>${escapeHtml(ex.instructions)}</h3>
     <div>${md(ex.content)}</div>
@@ -117,7 +139,7 @@ function renderExercise(ex) {
       ${answerInput}
       <div class="row">
         <button type="submit">Comprobar</button>
-        <button type="button" id="show-hint" style="background:transparent;color:var(--text);border-color:var(--border)">Pista</button>
+        <button type="button" id="show-hint" class="secondary">Pista</button>
       </div>
       <p id="hint" class="muted hidden">💡 ${escapeHtml(ex.hint)}</p>
     </form>`;
@@ -142,9 +164,13 @@ async function submitAnswer(e) {
       <div>${md(r.feedback)}</div>
       ${r.tip ? `<p><strong>Consejo:</strong> ${escapeHtml(r.tip)}</p>` : ""}
       <details><summary>Respuesta de referencia</summary>${md(r.reference_answer)}</details>
+      <p class="muted">🔁 Próximo repaso de <strong>${escapeHtml(r.skill)}</strong>: ${
+        r.nextReview.intervalDays === 0 ? "en tu próxima sesión (hay que reforzarlo)" : whenText(r.nextReview.dueAt)
+      }.</p>
       <div class="row"><button id="next">Siguiente ejercicio</button></div>`;
     $("#next").addEventListener("click", () => $("#new-exercise").requestSubmit($("#new-exercise button")));
     btn.closest(".row").remove();
+    refreshDueBanner();
   } catch (err) {
     showError("#result", err);
     busy(btn, false);
@@ -158,6 +184,7 @@ async function loadProgress() {
     const t = data.tracks[state.progressTrack];
     const fmt = (v) => (v === null ? "—" : v);
     $("#stats").innerHTML = `
+      <div class="stat"><span class="muted">Repasos pendientes</span><b>${t.dueForReview.length}</b></div>
       <div class="stat"><span class="muted">Ejercicios</span><b>${t.totalAttempts}</b></div>
       <div class="stat"><span class="muted">Habilidades</span><b>${t.skillsPracticed}</b></div>
       <div class="stat"><span class="muted">Dominio medio</span><b>${fmt(t.averageMastery)}</b></div>
@@ -170,6 +197,7 @@ async function loadProgress() {
         <div class="skill">
           <div class="skill-head"><strong>${escapeHtml(s.name)}</strong><span>${s.mastery}/100 · ${s.correct}/${s.attempts} bien</span></div>
           <div class="bar"><span style="width:${s.mastery}%;background:${masteryColor(s.mastery)}"></span></div>
+          <div class="muted">🔁 Próximo repaso: ${s.dueAt ? whenText(s.dueAt) : "hoy"}</div>
           ${s.mistakes.length ? `<ul>${s.mistakes.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}</ul>` : ""}
         </div>`,
           )
@@ -259,3 +287,5 @@ function showError(sel, err) {
   box.classList.remove("hidden");
   box.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
 }
+
+refreshDueBanner();

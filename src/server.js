@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { Store, TRACKS, learnerContext, recordAttempt, trackSummary, skillsForTrack } from "./progress.js";
+import { Store, TRACKS, dueSkills, skillKey, learnerContext, recordAttempt, trackSummary, skillsForTrack } from "./progress.js";
 import { AIError, analyzeProgress, chat, generateExercise, gradeAnswer } from "./ai.js";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -44,17 +44,27 @@ app.put("/api/profile", (req, res) => {
   res.json(store.state.profile);
 });
 
+// Elige el repaso más urgente, evitando repetir la habilidad del último ejercicio si hay otras pendientes.
+function pickReview(track) {
+  const due = dueSkills(store.state, track);
+  const last = store.state.history.findLast((h) => h.track === track)?.skill;
+  return due.find((s) => s.name !== last) ?? due[0] ?? null;
+}
+
 app.post("/api/exercise", async (req, res, next) => {
   const track = requireTrack(req, res);
   if (!track) return;
   try {
-    const focus = typeof req.body.focus === "string" ? req.body.focus.slice(0, 200) : "";
-    const exercise = await generateExercise({ track, focus, context: learnerContext(store.state, track) });
+    const focus = typeof req.body.focus === "string" ? req.body.focus.trim().slice(0, 200) : "";
+    // Sin tema pedido, primero van los repasos pendientes; `mode: "new"` los salta para aprender algo nuevo.
+    const review = focus || req.body.mode === "new" ? null : pickReview(track);
+    const exercise = await generateExercise({ track, focus, review, context: learnerContext(store.state, track) });
+    if (review) exercise.skill = review.name;
     const id = crypto.randomUUID();
     pending.set(id, { ...exercise, track });
     if (pending.size > 50) pending.delete(pending.keys().next().value);
     const { reference_answer, ...visible } = exercise;
-    res.json({ id, track, ...visible });
+    res.json({ id, track, isReview: Boolean(review), ...visible });
   } catch (err) {
     next(err);
   }
@@ -76,7 +86,14 @@ app.post("/api/answer", async (req, res, next) => {
       errorSkills: grade.other_weak_skills,
     });
     store.save();
-    res.json({ ...grade, reference_answer: exercise.reference_answer, skill: exercise.skill });
+    const { dueAt, intervalDays } = store.state.skills[skillKey(exercise.track, exercise.skill)];
+    res.json({
+      ...grade,
+      reference_answer: exercise.reference_answer,
+      skill: exercise.skill,
+      nextReview: { dueAt, intervalDays },
+      dueCount: dueSkills(store.state, exercise.track).length,
+    });
   } catch (err) {
     next(err);
   }

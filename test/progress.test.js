@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyState, recordAttempt, weakestSkills, trackSummary, skillKey } from "../src/progress.js";
+import { emptyState, recordAttempt, weakestSkills, trackSummary, skillKey, dueSkills, isDue } from "../src/progress.js";
 
 test("el primer intento fija el dominio y los siguientes lo suavizan", () => {
   const s = emptyState();
@@ -30,4 +30,55 @@ test("weakestSkills ordena por dominio y separa por track", () => {
   const sum = trackSummary(s, "programming");
   assert.equal(sum.totalAttempts, 2);
   assert.equal(sum.averageMastery, 55);
+});
+
+const DAY = 24 * 60 * 60 * 1000;
+const at = (days) => new Date(Date.UTC(2026, 0, 1) + days * DAY);
+
+test("los aciertos alargan el intervalo de repaso: 1, 3 y luego multiplica", () => {
+  const s = emptyState();
+  const k = skillKey("english", "Past simple");
+  recordAttempt(s, { track: "english", skill: "Past simple", score: 90 }, at(0));
+  assert.equal(s.skills[k].intervalDays, 1);
+  assert.equal(s.skills[k].dueAt, at(1).toISOString());
+  recordAttempt(s, { track: "english", skill: "Past simple", score: 90 }, at(1));
+  assert.equal(s.skills[k].intervalDays, 3);
+  recordAttempt(s, { track: "english", skill: "Past simple", score: 90 }, at(4));
+  assert.equal(s.skills[k].intervalDays, 8); // 3 × 2.7
+});
+
+test("un acierto con dudas crece más despacio que uno claro", () => {
+  const s = emptyState();
+  for (const [d, score] of [[0, 75], [1, 75], [3, 75]]) recordAttempt(s, { track: "english", skill: "A", score }, at(d));
+  assert.equal(s.skills[skillKey("english", "A")].intervalDays, 2); // 1 → 2 → round(2 × 1.2)
+});
+
+test("un fallo deja la habilidad pendiente ya y reinicia la racha", () => {
+  const s = emptyState();
+  const k = skillKey("programming", "Recursión");
+  recordAttempt(s, { track: "programming", skill: "Recursión", score: 95 }, at(0));
+  recordAttempt(s, { track: "programming", skill: "Recursión", score: 95 }, at(1));
+  recordAttempt(s, { track: "programming", skill: "Recursión", score: 30 }, at(4));
+  const sk = s.skills[k];
+  assert.equal(sk.intervalDays, 0);
+  assert.equal(sk.streak, 0);
+  assert.equal(sk.lapses, 1);
+  assert.equal(sk.ease, 2.5); // 2.7 tras dos aciertos claros, −0.2 por el fallo
+  assert.ok(isDue(sk, at(4)));
+  recordAttempt(s, { track: "programming", skill: "Recursión", score: 95 }, at(4));
+  assert.equal(s.skills[k].intervalDays, 1);
+});
+
+test("dueSkills devuelve solo lo pendiente, lo más débil primero", () => {
+  const s = emptyState();
+  recordAttempt(s, { track: "english", skill: "Fácil", score: 100 }, at(0));
+  recordAttempt(s, { track: "english", skill: "Difícil", score: 20 }, at(0));
+  recordAttempt(s, { track: "english", skill: "Media", score: 50 }, at(0));
+  assert.deepEqual(dueSkills(s, "english", at(0)).map((x) => x.name), ["Difícil", "Media"]);
+  assert.deepEqual(dueSkills(s, "english", at(1)).map((x) => x.name), ["Difícil", "Media", "Fácil"]);
+  assert.deepEqual(trackSummary(s, "english", at(0)).dueForReview, ["Difícil", "Media"]);
+});
+
+test("habilidades guardadas antes de la repetición espaciada cuentan como pendientes", () => {
+  assert.ok(isDue({ mastery: 80 }));
 });
