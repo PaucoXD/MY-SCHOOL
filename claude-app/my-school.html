@@ -96,6 +96,10 @@ label.field span.muted { font-weight: 400; }
 .thinking::after { content: "…"; animation: dots 1.2s steps(3) infinite; }
 @keyframes dots { 0% { content: ""; } 33% { content: "."; } 66% { content: ".."; } }
 
+.lesson { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.lesson pre { background: var(--surface); }
+.levels { display: flex; flex-direction: column; gap: 8px; }
+.levels .row button { flex: 1 1 140px; }
 .options { display: flex; flex-direction: column; gap: 6px; }
 .options label { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
 .options label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
@@ -171,7 +175,7 @@ label.field span.muted { font-weight: 400; }
         <button data-track="programming" aria-pressed="false">Programación</button>
       </div>
     </div>
-    <p class="muted" id="due-banner"></p>
+    <div class="muted" id="due-banner"></div>
     <form class="row" id="new-ex">
       <input type="text" id="focus" class="grow" placeholder="Opcional: un tema concreto (p. ej. phrasal verbs, arrays)">
       <button class="btn" type="submit" value="auto">Siguiente ejercicio</button>
@@ -278,7 +282,7 @@ label.field span.muted { font-weight: 400; }
         <span class="muted">En JavaScript tu código se ejecuta con tests reales; en los demás lo corrige la IA.</span>
       </label>
       <label class="field">Nivel de programación
-        <select name="programmingLevel" id="p-plevel"><option>principiante</option><option>intermedio</option><option>avanzado</option></select>
+        <select name="programmingLevel" id="p-plevel"><option value="desde cero">desde cero (nunca he programado)</option><option>principiante</option><option>intermedio</option><option>avanzado</option></select>
       </label>
       <label class="field">Objetivos
         <textarea name="goals" id="p-goals" rows="3" placeholder="Ej: hablar con nativos en el trabajo, conseguir mi primer empleo como desarrollador…"></textarea>
@@ -321,7 +325,7 @@ function md(text) {
 const TRACKS = ["english", "programming"];
 const DAY = 86400000, PASS = 70, ALPHA = 0.35;
 function emptyState() {
-  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "principiante", goals: "" }, skills: {}, history: [], phrases: [] };
+  return { profile: { englishLevel: "A2", programmingLanguage: "JavaScript", programmingLevel: "desde cero", goals: "", levelChosen: {} }, skills: {}, history: [], phrases: [] };
 }
 let S = emptyState();
 const slug = (t) => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -414,7 +418,7 @@ const store = { ref: null, writing: false, again: false, timer: null };
 function normalize(data) {
   const base = emptyState();
   if (!data || typeof data !== "object") return base;
-  return { profile: { ...base.profile, ...(data.profile ?? {}) }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases) };
+  return { profile: { ...base.profile, ...(data.profile ?? {}), levelChosen: { ...(data.profile?.levelChosen ?? {}) } }, skills: data.skills ?? {}, history: arr(data.history), phrases: arr(data.phrases) };
 }
 function loadLocal() { try { const raw = localStorage.getItem(LOCAL_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
 function save() {
@@ -552,17 +556,31 @@ function pickReview(track) {
   const last = [...S.history].reverse().find((h) => h.track === track)?.skill;
   return due.find((s) => s.name !== last) ?? due[0] ?? null;
 }
+const PROG_LEVEL = {
+  "desde cero": `NUNCA HA PROGRAMADO. Una sola idea por ejercicio. La lesson la explica desde cero, con una comparación de la vida diaria y un ejemplo de 1-3 líneas comentado.
+El ejercicio es muy fácil (difficulty 1) y de uno de estos tipos: multiple_choice, predict_output ("¿qué muestra este código?") o fill_blank (completar UNA palabra o UNA línea).
+Código de 1-4 líneas. Nada de pedir escribir una función entera. Avanza en este orden: qué es un programa y console.log, valores y variables, números y texto,
+comparaciones (true/false), if/else, bucles, arrays, funciones.`,
+  principiante: "Sabe lo básico (variables, if, bucles sencillos). Ejercicios cortos; si pides código, como mucho 3-6 líneas. La lesson incluye un ejemplo resuelto parecido.",
+  intermedio: "Se maneja con funciones, arrays y objetos. Puede escribir funciones de 5-15 líneas.",
+  avanzado: "Programa con soltura: algoritmos, estructuras de datos, asincronía, buenas prácticas.",
+};
+const lessonNeeded = (track) => (track === "programming" ? ["desde cero", "principiante"].includes(S.profile.programmingLevel) : ["A1", "A2"].includes(S.profile.englishLevel));
 function exercisePrompt({ track, focus, review, runtime, retryReason }) {
   const topic = track === "english"
     ? "inglés para hablar con nativos: prioriza el inglés real (phrasal verbs, expresiones, contracciones, registro coloquial vs. formal, cómo reaccionar en una conversación) frente al inglés de libro, con frases de situaciones reales"
-    : `programación en ${S.profile.programmingLanguage} (lógica, sintaxis, estructuras de datos, depuración, conceptos), nivel ${S.profile.programmingLevel}`;
+    : `programación en ${S.profile.programmingLanguage}. Nivel del alumno: ${PROG_LEVEL[S.profile.programmingLevel] ?? PROG_LEVEL.principiante}`;
   let selection;
   if (focus) selection = `El alumno pidió practicar: ${focus}`;
   else if (review) selection = `Es un REPASO programado (repetición espaciada) de la habilidad "${review.name}" (dominio ${review.mastery}/100).
 Errores recientes: ${review.mistakes.length ? review.mistakes.join(" | ") : "ninguno"}.
 Usa exactamente "${review.name}" como skill. Si tuvo errores, ataca ese punto desde otro ángulo; si la domina, sube un poco la dificultad.`;
-  else selection = "No hay repasos pendientes: introduce una habilidad nueva adecuada a su nivel (o el siguiente paso lógico). Sin historial, empieza por un diagnóstico de su nivel declarado.";
-  const codeRules = runtime
+  else selection = "No hay repasos pendientes: introduce la siguiente habilidad que le toca aprender según su nivel y lo que ya domina. Sin historial, empieza por lo primero de su nivel (no le hagas un examen).";
+  const codeRules = runtime && S.profile.programmingLevel === "desde cero"
+    ? `Si haces un fill_blank de código, puedes darle tests reales: starter_code es una función CASI COMPLETA con una sola línea por completar
+marcada con el comentario // ← completa esta línea; function_name es esa función; tests: 2-4 casos (args_json = string con array JSON de argumentos,
+expected_json = string con el valor JSON); reference_answer = la función completa, solo código. En otro caso, function_name y starter_code vacíos y tests [].`
+    : runtime
     ? `El código del alumno se EJECUTA con tests reales en JavaScript. Si eliges kind "code" o "fix_bug" (más o menos la mitad de las veces):
 - Pide escribir (o arreglar) UNA función pura llamada function_name que DEVUELVE un valor JSON (números, strings, booleanos, null, arrays, objetos).
 - starter_code: la firma con cuerpo vacío ("code") o el código completo con el bug ("fix_bug").
@@ -573,6 +591,10 @@ Para cualquier otro kind deja function_name y starter_code vacíos y tests como 
   return `${TUTOR}
 
 Crea UN ejercicio de ${topic}. Debe poder responderse en 1-5 minutos. Varía el tipo.
+${lessonNeeded(track) || !review
+    ? `Incluye "lesson": una mini-lección ANTES del ejercicio (3-8 líneas en markdown) que enseñe exactamente lo que el ejercicio pide, con un ejemplo resuelto.
+El alumno debe poder resolver el ejercicio solo con esa lección. No adelantes la respuesta exacta.`
+    : 'Deja "lesson" vacío ("") salvo que haga falta recordar algo.'}
 
 <learner>
 ${learnerContext(track)}
@@ -584,7 +606,7 @@ ${codeRules}
 ${retryReason ? `\nUn intento anterior se descartó: ${retryReason}. Asegúrate de que la solución pasa todos los tests.` : ""}
 
 Responde SOLO con un objeto JSON con estas claves:
-{"skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept",
+{"lesson": "mini-lección en markdown o vacío", "skill": "habilidad concreta, nombre corto en español", "kind": "multiple_choice|fill_blank|translate|write|code|predict_output|fix_bug|concept",
  "difficulty": 1-5, "instructions": "instrucción breve en español", "content": "enunciado (markdown permitido)",
  "options": ["solo si es multiple_choice, si no []"], "hint": "pista", "reference_answer": "respuesta correcta o solución modelo",
  "why_this_exercise": "una frase al alumno de por qué este ejercicio", "function_name": "", "starter_code": "",
@@ -594,7 +616,7 @@ function cleanExercise(x) {
   return {
     skill: str(x?.skill) || "General", kind: str(x?.kind), difficulty: clamp(x?.difficulty, 1, 5),
     instructions: str(x?.instructions), content: str(x?.content), options: arr(x?.options).map(str).filter(Boolean),
-    hint: str(x?.hint), reference_answer: str(x?.reference_answer), why: str(x?.why_this_exercise),
+    lesson: str(x?.lesson), hint: str(x?.hint), reference_answer: str(x?.reference_answer), why: str(x?.why_this_exercise),
     function_name: str(x?.function_name), starter_code: str(x?.starter_code),
     tests: arr(x?.tests).map((t) => ({ description: str(t?.description), args_json: str(t?.args_json), expected_json: str(t?.expected_json) })),
   };
@@ -619,7 +641,24 @@ async function createExercise(track, focus, review) {
   return { ...ex, tests: [], track }; // sin tests fiables: lo corrige solo la IA
 }
 
+const LEVEL_CHOICES = {
+  programming: [["desde cero", "Nunca he programado"], ["principiante", "Sé un poco"], ["intermedio", "Me defiendo"], ["avanzado", "Programo con soltura"]],
+  english: [["A1", "Casi nada"], ["A2", "Básico"], ["B1", "Me defiendo"], ["B2", "Bien"], ["C1", "Muy bien"]],
+};
 function renderDueBanner() {
+  const hasHistory = S.history.some((h) => h.track === P.track);
+  if (!hasHistory && !S.profile.levelChosen?.[P.track]) {
+    $("#due-banner").innerHTML = `<div class="card levels"><h3>${P.track === "programming" ? "¿Has programado alguna vez?" : "¿Qué tal tu inglés?"}</h3>
+      <p class="muted">Así empiezo por tu nivel. Puedes cambiarlo cuando quieras en Perfil.</p>
+      <div class="row">${LEVEL_CHOICES[P.track].map(([v, l]) => `<button type="button" class="btn ghost" data-level="${esc(v)}">${esc(l)}</button>`).join("")}</div></div>`;
+    $$("[data-level]").forEach((b) => (b.onclick = () => {
+      S.profile[P.track === "programming" ? "programmingLevel" : "englishLevel"] = b.dataset.level;
+      S.profile.levelChosen = { ...S.profile.levelChosen, [P.track]: true };
+      save(); renderProfile(); renderDueBanner();
+      $("#new-ex").requestSubmit($('#new-ex button[value="auto"]'));
+    }));
+    return;
+  }
   const due = dueSkills(P.track).map((s) => s.name);
   $("#due-banner").textContent = due.length
     ? `Tienes ${due.length} repaso${due.length === 1 ? "" : "s"} pendiente${due.length === 1 ? "" : "s"}: ${due.slice(0, 4).join(", ")}${due.length > 4 ? "…" : ""}. «Siguiente ejercicio» empieza por ahí.`
@@ -671,6 +710,7 @@ function renderExercise() {
   $("#exercise").innerHTML = `
     <div class="row">${ex.isReview ? '<span class="chip accent">Repaso</span>' : ""}<span class="chip">${esc(ex.skill)}</span><span class="chip">Dificultad ${ex.difficulty}/5</span></div>
     ${ex.why ? `<p class="muted">${esc(ex.why)}</p>` : ""}
+    ${ex.lesson ? `<div class="lesson"><span class="eyebrow">Primero, lo que necesitas saber</span>${md(ex.lesson)}</div>` : ""}
     <h3>${esc(ex.instructions)}</h3>
     ${md(ex.content)}
     ${hasTests ? testList(ex) : ""}
@@ -680,11 +720,13 @@ function renderExercise() {
         ${hasTests ? '<button type="button" class="btn ghost" id="run">Ejecutar tests</button>' : ""}
         <button class="btn" type="submit">${hasTests ? "Enviar solución" : "Comprobar"}</button>
         <button type="button" class="btn ghost" id="hint-btn">Pista</button>
+        <button type="button" class="btn ghost" id="dunno">No lo sé</button>
       </div>
       <p class="muted" id="hint" hidden>${esc(ex.hint)}</p>
     </form>
     <div id="run-out"></div>`;
   $("#hint-btn").onclick = () => ($("#hint").hidden = false);
+  $("#dunno").onclick = (e) => gradeAnswer("", e.currentTarget, true);
   if (hasTests) {
     $("#run").onclick = async () => {
       $("#run").disabled = true;
@@ -698,19 +740,23 @@ function renderExercise() {
   $("#answer-form").addEventListener("submit", submitAnswer);
 }
 
-async function submitAnswer(e) {
+function submitAnswer(e) {
   e.preventDefault();
   const ex = P.exercise;
   const answer = ex.options.length && !ex.tests.length
     ? ex.options[Number(document.querySelector('input[name="opt"]:checked')?.value)] : $("#answer")?.value;
   if (!answer?.trim()) return;
-  const btn = e.submitter;
+  gradeAnswer(answer, e.submitter);
+}
+
+async function gradeAnswer(answer, btn, dunno = false) {
+  const ex = P.exercise;
   btn.disabled = true;
   const res = $("#result");
   res.hidden = false;
   res.innerHTML = '<p class="thinking">Corrigiendo</p>';
   try {
-    const testRun = ex.tests.length ? await runTests(answer, ex.function_name, ex.tests) : null;
+    const testRun = ex.tests.length && !dunno ? await runTests(answer, ex.function_name, ex.tests) : null;
     const g = await askJSON(`${TUTOR}
 
 Corrige la respuesta del alumno. Sé justo: acepta respuestas equivalentes a la de referencia (otra traducción válida, otro código que funcione).
@@ -720,9 +766,10 @@ ${learnerContext(ex.track)}
 <exercise>
 ${JSON.stringify({ skill: ex.skill, kind: ex.kind, instructions: ex.instructions, content: ex.content, options: ex.options, reference_answer: ex.reference_answer })}
 </exercise>
-<student_answer>
+${dunno ? `El alumno ha pulsado «No lo sé». Pon score 0 y verdict "incorrecto". En feedback, explícale cómo resolverlo PASO A PASO, como a alguien
+que lo ve por primera vez: qué pide el ejercicio, el razonamiento y la solución comentada. mistake_summary: "No sabía cómo resolverlo".` : `<student_answer>
 ${answer.slice(0, 8000)}
-</student_answer>
+</student_answer>`}
 ${testRun ? `Se ejecutó su código: pasó ${testRun.passed} de ${testRun.total} tests.${testRun.error ? ` Error general: ${testRun.error}` : ""}
 <test_results>${JSON.stringify(testRun.results.map(({ description, args_json, expected_json, passed, actual, error }) => ({ description, args_json, expected_json, passed, actual, error })))}</test_results>
 Los tests son la verdad: no digas que funciona si alguno falla; explica el caso concreto.` : ""}
@@ -740,6 +787,7 @@ Responde SOLO con un objeto JSON:
       if (all && verdict === "incorrecto") verdict = "casi";
       if (!all && verdict === "correcto") verdict = "casi";
     }
+    if (dunno) { score = 0; verdict = "incorrecto"; }
     recordAttempt({ track: ex.track, skill: ex.skill, score, mistake: str(g?.mistake_summary), errorSkills: arr(g?.other_weak_skills).map(str) });
     save();
     const sk = S.skills[skillKey(ex.track, ex.skill)];
@@ -1127,7 +1175,8 @@ function renderProfile() {
 }
 $("#profile-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500) });
+  Object.assign(S.profile, { englishLevel: $("#p-level").value, programmingLanguage: $("#p-lang").value, programmingLevel: $("#p-plevel").value, goals: $("#p-goals").value.slice(0, 500), levelChosen: { english: true, programming: true } });
+  renderDueBanner();
   save();
   $("#p-saved").hidden = false;
   setTimeout(() => ($("#p-saved").hidden = true), 2000);
